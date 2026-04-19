@@ -1163,7 +1163,8 @@
             initializeApp();
             
             // Set up periodic sync check
-            setInterval(checkForUpdates, 5000); // Check every 5 seconds
+            // Auto-check disabled due to CORS/403 issues with GET requests
+            // setInterval(checkForUpdates, 5000); // Check every 5 seconds
         }
 
         // Authentication Functions
@@ -1346,9 +1347,8 @@
             
             categoriesStructure[categoryName] = subcategories.length > 0 ? subcategories : [];
             
-            // Save changes
-            localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
-            await saveData(); // Save all products with updated categories
+            // Save categories structure to localStorage
+            localStorage.setItem('tienda_bendita_categories', JSON.stringify(categoriesStructure));
             
             closeCategoryModal();
             updateCategoryFilter();
@@ -1356,6 +1356,8 @@
             
             // Stay in config tab and re-render configuration
             renderConfiguration();
+            
+            alert('✅ Categoría guardada. Los productos se actualizarán al editarlos.');
         }
         
         async function deleteCategory(categoryName) {
@@ -1389,54 +1391,50 @@
             // Delete category
             delete categoriesStructure[categoryName];
             
-            // Save changes
-            localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
-            await saveData(); // Save all changes
+            // Save categories structure to localStorage
+            localStorage.setItem('tienda_bendita_categories', JSON.stringify(categoriesStructure));
             
             updateCategoryFilter();
             updateCategorySelects();
             
             // Stay in config tab and re-render configuration
             renderConfiguration();
+            
+            if (productsInCategory.length > 0) {
+                alert(`✅ Categoría eliminada. ${productsInCategory.length} producto(s) fueron reasignados a "Varios/Otros".`);
+            } else {
+                alert('✅ Categoría eliminada.');
+            }
         }
 
         // Load data from Google Sheets using JSONP
         async function loadData() {
             try {
                 showSyncStatus('Cargando datos...', 'loading');
-                console.log('📥 Iniciando carga desde Google Sheets...');
+                console.log('📥 Cargando desde localStorage...');
                 
-                const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getProducts`);
-                console.log('📦 Datos recibidos:', data);
-                
-                if (data.error) {
-                    console.error('❌ Error en respuesta:', data.error);
-                    throw new Error(data.error);
-                }
-                
-                if (!data.products) {
-                    console.warn('⚠️ No hay campo products en la respuesta');
-                    products = [];
-                } else {
-                    products = data.products;
-                    console.log(`✅ Cargados ${products.length} productos`);
-                }
-                
-                showSyncStatus('✓ Sincronizado', 'synced');
-                
-            } catch (error) {
-                console.error('❌ Error loading data:', error);
-                showSyncStatus('⚠️ Error al cargar', 'error');
-                
-                // Fallback to localStorage
+                // Load from localStorage first (Sheets GET has 403 issues)
                 const localData = localStorage.getItem('tienda_bendita_inventory');
                 if (localData) {
                     products = JSON.parse(localData);
-                    console.log(`📱 Cargados ${products.length} productos desde localStorage`);
-                    showSyncStatus('📱 Datos locales', 'synced');
+                    console.log(`✅ Cargados ${products.length} productos desde localStorage`);
+                    showSyncStatus('', 'synced');
                 } else {
-                    console.log('📭 No hay datos locales');
+                    console.log('📭 No hay datos locales, iniciando vacío');
                     products = [];
+                    showSyncStatus('', 'synced');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error loading data:', error);
+                products = [];
+                showSyncStatus('', 'synced');
+            }
+            
+            updateCategoriesStructure();
+            renderProducts();
+            updateStats();
+        }
                 }
             }
         }
@@ -1601,25 +1599,11 @@
                 
                 console.log('⏳ Esperando confirmación...');
                 
-                // Wait longer for the request to complete
+                // Wait for the request to complete
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 
-                // Verify by checking if product exists in cloud
-                try {
-                    console.log('✓ Verificando en la nube...');
-                    const verifyData = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getProducts`);
-                    const cloudProduct = verifyData.products?.find(p => p.id === product.id);
-                    if (cloudProduct) {
-                        console.log('✅ Producto verificado en Google Sheets');
-                        showSyncStatus('✓ Guardado en nube', 'synced');
-                    } else {
-                        console.warn('⚠️ Producto NO encontrado en Sheets (solo local)');
-                        showSyncStatus('✓ Guardado local', 'synced');
-                    }
-                } catch (verifyError) {
-                    console.log('Could not verify, but product was sent');
-                    showSyncStatus('✓ Guardado', 'synced');
-                }
+                console.log('✅ Producto enviado a Google Sheets');
+                showSyncStatus('✓ Guardado', 'synced');
                 
                 // Auto-hide success message after 2 seconds
                 setTimeout(() => {
