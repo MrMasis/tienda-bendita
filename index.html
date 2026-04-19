@@ -1166,16 +1166,25 @@
             let clickTimer = null;
             const brandTitle = document.getElementById('brandTitle');
             
+            if (!brandTitle) {
+                console.error('❌ brandTitle element not found!');
+            } else {
+                console.log('✅ Triple-click listener attached to brandTitle');
+            }
+            
             brandTitle.addEventListener('click', function() {
                 clickCount++;
+                console.log(`🖱️ Click ${clickCount} detected`);
                 
                 if (clickCount === 1) {
                     clickTimer = setTimeout(function() {
+                        console.log('⏱️ Timer expired, resetting count');
                         clickCount = 0;
                     }, 500); // Reset after 500ms
                 }
                 
                 if (clickCount === 3) {
+                    console.log('🎉 Triple-click detected! Opening admin login...');
                     clearTimeout(clickTimer);
                     clickCount = 0;
                     showAdminLogin();
