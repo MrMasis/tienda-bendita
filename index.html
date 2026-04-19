@@ -1906,28 +1906,27 @@
                 const placeholder = document.getElementById('uploadPlaceholder');
                 const upload = document.getElementById('photoUpload');
                 
-                placeholder.innerHTML = '<div style="text-align: center;"><div>⏳ Subiendo foto a Google Drive...</div><div style="font-size: 0.8em; margin-top: 5px;">Esto puede tardar unos segundos</div></div>';
+                placeholder.innerHTML = '<div style="text-align: center;"><div>⏳ Procesando y subiendo foto...</div><div style="font-size: 0.8em; margin-top: 5px;">Esto puede tardar unos segundos</div></div>';
                 
-                // Read file as base64
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    const base64Data = e.target.result;
+                // IMPORTANT: Compress BEFORE uploading
+                compressImage(file, async (compressedBase64) => {
+                    console.log('📸 Foto comprimida:', (compressedBase64.length / 1024).toFixed(2), 'KB');
                     
                     // Show preview immediately
-                    preview.src = base64Data;
+                    preview.src = compressedBase64;
                     preview.style.display = 'block';
                     placeholder.style.display = 'none';
                     upload.classList.add('has-photo');
                     
                     try {
-                        // Upload to Google Drive
-                        const driveUrl = await uploadPhotoToDrive(base64Data, file.name);
+                        // Upload compressed photo to Google Drive
+                        const driveUrl = await uploadPhotoToDrive(compressedBase64, file.name);
                         
                         // Store Drive URL instead of base64
                         preview.src = driveUrl;
                         preview.dataset.driveUrl = driveUrl;
                         
-                        console.log('✅ Foto subida a Drive:', driveUrl);
+                        console.log('✅ Foto guardada en Drive');
                         
                         const deleteBtn = document.getElementById('deletePhotoBtn');
                         if (deleteBtn) deleteBtn.style.display = 'block';
@@ -1939,8 +1938,7 @@
                         placeholder.style.display = 'block';
                         placeholder.innerHTML = '<div class="icon">📷</div><div>Click para subir una foto</div>';
                     }
-                };
-                reader.readAsDataURL(file);
+                });
             }
         }
         
@@ -2308,32 +2306,39 @@
                 const file = e.target.files[0];
                 if (file) {
                     try {
-                        showSyncStatus('📤 Subiendo foto a Drive...', 'saving');
+                        showSyncStatus('📸 Procesando foto...', 'saving');
                         
-                        // Read file
-                        const reader = new FileReader();
-                        reader.onload = async function(event) {
-                            const base64Data = event.target.result;
+                        // Compress BEFORE uploading
+                        compressImage(file, async (compressedBase64) => {
+                            console.log('📸 Foto comprimida:', (compressedBase64.length / 1024).toFixed(2), 'KB');
                             
-                            // Upload to Drive
-                            const driveUrl = await uploadPhotoToDrive(base64Data, file.name);
-                            
-                            // Update product with Drive URL
-                            const product = products.find(p => p.id === id);
-                            if (product) {
-                                product.photo = driveUrl;
-                                localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
-                                await saveSingleProduct(product);
-                                renderProducts();
-                                showSyncStatus('✓ Foto actualizada', 'synced');
-                                setTimeout(() => showSyncStatus('', 'synced'), 2000);
+                            try {
+                                showSyncStatus('📤 Subiendo a Drive...', 'saving');
+                                
+                                // Upload to Drive
+                                const driveUrl = await uploadPhotoToDrive(compressedBase64, file.name);
+                                
+                                // Update product with Drive URL
+                                const product = products.find(p => p.id === id);
+                                if (product) {
+                                    product.photo = driveUrl;
+                                    localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
+                                    await saveSingleProduct(product);
+                                    renderProducts();
+                                    showSyncStatus('✓ Foto actualizada', 'synced');
+                                    setTimeout(() => showSyncStatus('', 'synced'), 2000);
+                                }
+                            } catch (error) {
+                                console.error('Error:', error);
+                                showSyncStatus('⚠️ Error subiendo foto', 'error');
+                                setTimeout(() => showSyncStatus('', 'synced'), 3000);
+                                alert('Error al subir la foto. Por favor intenta de nuevo.');
                             }
-                        };
-                        reader.readAsDataURL(file);
+                        });
                         
                     } catch (error) {
                         console.error('Error:', error);
-                        showSyncStatus('⚠️ Error subiendo foto', 'error');
+                        showSyncStatus('⚠️ Error', 'error');
                         setTimeout(() => showSyncStatus('', 'synced'), 3000);
                     }
                 }
