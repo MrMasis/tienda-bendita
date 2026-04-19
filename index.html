@@ -1714,8 +1714,8 @@
                 
                 console.log('⏳ Esperando confirmación...');
                 
-                // Wait much longer on mobile (photos can be slower to upload)
-                const waitTime = isMobile ? 10000 : 2000;  // 10 seconds on mobile
+                // Wait much longer on mobile (larger photos take more time)
+                const waitTime = isMobile ? 15000 : 5000;  // 15 seconds on mobile, 5 on desktop
                 await new Promise(resolve => setTimeout(resolve, waitTime));
                 
                 console.log('✅ Producto enviado a Google Sheets');
@@ -1940,11 +1940,11 @@
                         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                         console.log(`📱 Dispositivo móvil detectado: ${isMobile}`);
                         
-                        // Calculate new dimensions (prioritize quality)
+                        // Calculate new dimensions (minimal compression, near-original quality)
                         let width = img.width;
                         let height = img.height;
-                        const maxWidth = isMobile ? 600 : 1000;  // Higher quality
-                        const maxHeight = isMobile ? 600 : 1000;
+                        const maxWidth = isMobile ? 1200 : 1500;  // High quality
+                        const maxHeight = isMobile ? 1200 : 1500;
                         
                         if (width > height) {
                             if (width > maxWidth) {
@@ -1968,18 +1968,18 @@
                         
                         console.log('🎨 Imagen dibujada en canvas');
                         
-                        // Convert to base64 with quality (prioritize quality)
-                        const quality = isMobile ? 0.6 : 0.8;  // 60% on mobile, 80% on desktop
+                        // Convert to base64 with minimal compression (95% quality)
+                        const quality = isMobile ? 0.95 : 0.95;  // 95% quality both devices
                         console.log(`🔧 Convirtiendo a JPEG con calidad ${quality * 100}%...`);
                         const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
                         
                         const sizeKB = (compressedBase64.length / 1024).toFixed(2);
                         console.log(`📸 Foto comprimida: ${sizeKB} KB (móvil: ${isMobile}, dimensiones: ${width}x${height}, calidad: ${quality * 100}%)`);
                         
-                        // If STILL too large (>50KB), compress slightly
-                        if (compressedBase64.length / 1024 > 50) {
-                            console.log('⚠️ Foto muy grande, recomprimiendo a 50% calidad...');
-                            const recompressed = canvas.toDataURL('image/jpeg', 0.5);
+                        // If STILL too large (>200KB), compress to 85%
+                        if (compressedBase64.length / 1024 > 200) {
+                            console.log('⚠️ Foto muy grande (>200KB), recomprimiendo a 85% calidad...');
+                            const recompressed = canvas.toDataURL('image/jpeg', 0.85);
                             const newSizeKB = (recompressed.length / 1024).toFixed(2);
                             console.log(`📸 Foto recomprimida: ${newSizeKB} KB`);
                             callback(recompressed);
