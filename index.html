@@ -1227,10 +1227,10 @@
                 if (match) fileId = match[1];
             }
             
-            // Format 3: Already in correct format
+            // Format 3: uc?export=view&id format
             if (!fileId) {
-                match = url.match(/drive\.google\.com\/uc\?export=view&id=([^&]+)/);
-                if (match) return url; // Already correct
+                match = url.match(/drive\.google\.com\/uc\?.*[&?]id=([^&]+)/);
+                if (match) fileId = match[1];
             }
             
             // Format 4: https://drive.google.com/uc?id=FILE_ID
@@ -1239,9 +1239,10 @@
                 if (match) fileId = match[1];
             }
             
-            // If we found a file ID, return the correct format
+            // If we found a file ID, return thumbnail format (no ampersand!)
             if (fileId) {
-                return `https://drive.google.com/uc?export=view&id=${fileId}`;
+                // Use thumbnail format which works better with HTML escaping
+                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
             }
             
             // If we couldn't parse it, return original
@@ -1613,15 +1614,26 @@
                         products = data.products.map(p => {
                             // Clean photo URL if it exists (remove markdown formatting)
                             if (p.photo && typeof p.photo === 'string') {
+                                const originalPhoto = p.photo;
                                 p.photo = p.photo.trim()
                                     .replace(/^__/, '').replace(/__$/, '')
                                     .replace(/^\*\*/, '').replace(/\*\*$/, '')
                                     .replace(/^_/, '').replace(/_$/, '')
                                     .replace(/^\*/, '').replace(/\*$/, '')
                                     .trim();
+                                
+                                // Debug: Log if photo was cleaned
+                                if (originalPhoto !== p.photo) {
+                                    console.log(`🧹 Foto limpiada para ${p.producto}:`, originalPhoto, '→', p.photo);
+                                }
                             }
                             return p;
                         });
+                        
+                        // Debug: Count products with photos
+                        const photosCount = products.filter(p => p.photo).length;
+                        console.log(`📸 ${photosCount} productos tienen foto`);
+                        
                         localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
                         console.log(`✅ Cargados ${products.length} productos desde Sheets`);
                     } else {
