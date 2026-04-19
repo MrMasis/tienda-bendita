@@ -744,12 +744,12 @@
     <div class="container">
         <!-- Header -->
         <header>
-            <div class="brand-title">💎 TIENDA BENDITA</div>
+            <div class="brand-title" id="brandTitle">💎 TIENDA BENDITA</div>
             <div class="brand-subtitle">BISUTERÍA Y MÁS</div>
             <div class="brand-verse">EFESIOS 3:20</div>
             <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
                 <span id="modeBadge" style="background: var(--primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; font-weight: bold;">👁️ Vista Pública</span>
-                <button id="adminBtn" onclick="showAdminLogin()" style="padding: 8px 16px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em;">
+                <button id="adminBtn" onclick="showAdminLogin()" style="display: none; padding: 8px 16px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em;">
                     🔐 Admin
                 </button>
                 <button id="logoutBtn" onclick="logout()" style="display: none; padding: 8px 16px; border: 2px solid var(--danger); background: white; color: var(--danger); border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em;">
@@ -1148,7 +1148,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5RBHEfvC0pNA2J-WK-5SyS5su6g0AKE3VxJAgryBBVrrIcaKcYYUOkUU1YIMZQQnk/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJVmvj7Rng4SISGW45mZ73nZHGWpGzKOCZBvxCPeUIZ_Y-3OwzpxuX286pPsVkOJvm/exec';
 
         // Initialize
         async function init() {
@@ -1161,6 +1161,27 @@
             // Always start in public mode
             isAdminMode = false;
             initializeApp();
+            
+            // Triple-click on brand title to show admin login (stealth access)
+            let clickCount = 0;
+            let clickTimer = null;
+            const brandTitle = document.getElementById('brandTitle');
+            
+            brandTitle.addEventListener('click', function() {
+                clickCount++;
+                
+                if (clickCount === 1) {
+                    clickTimer = setTimeout(function() {
+                        clickCount = 0;
+                    }, 500); // Reset after 500ms
+                }
+                
+                if (clickCount === 3) {
+                    clearTimeout(clickTimer);
+                    clickCount = 0;
+                    showAdminLogin();
+                }
+            });
             
             // Set up periodic sync check
             // Auto-check disabled due to CORS/403 issues with GET requests
@@ -1632,14 +1653,17 @@
         }
         
         // Save SINGLE product (FAST - for individual edits)
-        async function saveSingleProduct(product) {
+        async function saveSingleProduct(product, retryCount = 0) {
             console.log('💾 Guardando producto individual:', product.id, product.producto);
+            
+            // Detect mobile
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             
             // Always save to localStorage as backup
             localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
 
             try {
-                showSyncStatus('Guardando...', 'saving');
+                showSyncStatus(isMobile ? '📱 Guardando desde móvil...' : 'Guardando...', 'saving');
                 
                 console.log('📤 Enviando a Google Sheets...');
                 
@@ -1682,8 +1706,9 @@
                 
                 console.log('⏳ Esperando confirmación...');
                 
-                // Wait for the request to complete
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Wait longer on mobile
+                const waitTime = isMobile ? 5000 : 2000;
+                await new Promise(resolve => setTimeout(resolve, waitTime));
                 
                 console.log('✅ Producto enviado a Google Sheets');
                 showSyncStatus('✓ Guardado', 'synced');
@@ -1697,7 +1722,20 @@
                 
             } catch (error) {
                 console.error('Error saving product:', error);
-                showSyncStatus('✓ Guardado local', 'synced');
+                
+                // Retry once if first attempt failed
+                if (retryCount === 0) {
+                    console.log('🔄 Reintentando guardado...');
+                    showSyncStatus('🔄 Reintentando...', 'saving');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return saveSingleProduct(product, 1);
+                }
+                
+                // Failed after retry
+                showSyncStatus('⚠️ Error al guardar en nube (guardado local)', 'error');
+                setTimeout(() => {
+                    showSyncStatus('', 'synced');
+                }, 3000);
             }
         }
         
@@ -1873,42 +1911,87 @@
         
         // Compress image to reduce size
         function compressImage(file, callback) {
+            console.log('🔧 Iniciando compresión de imagen...');
             const reader = new FileReader();
             reader.onload = function(e) {
+                console.log('📖 Archivo leído, creando imagen...');
                 const img = new Image();
                 img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Calculate new dimensions (max 800px width)
-                    let width = img.width;
-                    let height = img.height;
-                    const maxWidth = 800;
-                    const maxHeight = 800;
-                    
-                    if (width > height) {
-                        if (width > maxWidth) {
-                            height = height * (maxWidth / width);
-                            width = maxWidth;
+                    console.log(`🖼️ Imagen cargada: ${img.width}x${img.height}`);
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        if (!ctx) {
+                            console.error('❌ No se pudo crear contexto canvas');
+                            callback(e.target.result);
+                            return;
                         }
-                    } else {
-                        if (height > maxHeight) {
-                            width = width * (maxHeight / height);
-                            height = maxHeight;
+                        
+                        // Detect if mobile
+                        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                        console.log(`📱 Dispositivo móvil detectado: ${isMobile}`);
+                        
+                        // Calculate new dimensions (VERY aggressive on mobile)
+                        let width = img.width;
+                        let height = img.height;
+                        const maxWidth = isMobile ? 400 : 800;  // Much smaller on mobile
+                        const maxHeight = isMobile ? 400 : 800;
+                        
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = height * (maxWidth / width);
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = width * (maxHeight / height);
+                                height = maxHeight;
+                            }
                         }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        console.log(`✂️ Redimensionando a: ${width}x${height}`);
+                        
+                        // Draw and compress
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        console.log('🎨 Imagen dibujada en canvas');
+                        
+                        // Convert to base64 with quality (VERY low on mobile)
+                        const quality = isMobile ? 0.4 : 0.7;  // 40% on mobile, 70% on desktop
+                        console.log(`🔧 Convirtiendo a JPEG con calidad ${quality * 100}%...`);
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                        
+                        const sizeKB = (compressedBase64.length / 1024).toFixed(2);
+                        console.log(`📸 Foto comprimida: ${sizeKB} KB (móvil: ${isMobile}, dimensiones: ${width}x${height}, calidad: ${quality * 100}%)`);
+                        
+                        // If STILL too large (>12KB), compress more aggressively
+                        if (compressedBase64.length / 1024 > 12) {
+                            console.log('⚠️ Foto aún muy grande, recomprimiendo a 20% calidad...');
+                            const recompressed = canvas.toDataURL('image/jpeg', 0.2);
+                            const newSizeKB = (recompressed.length / 1024).toFixed(2);
+                            console.log(`📸 Foto recomprimida: ${newSizeKB} KB`);
+                            callback(recompressed);
+                        } else {
+                            callback(compressedBase64);
+                        }
+                    } catch (error) {
+                        console.error('❌ Error comprimiendo imagen:', error);
+                        // Fallback: use original if compression fails
+                        callback(e.target.result);
                     }
-                    
-                    canvas.width = width;
-                    canvas.height = height;
-                    
-                    // Draw and compress
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Convert to base64 with quality 0.7 (70%)
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                    callback(compressedBase64);
+                };
+                img.onerror = function() {
+                    console.error('❌ Error cargando imagen');
+                    callback(e.target.result);
                 };
                 img.src = e.target.result;
+            };
+            reader.onerror = function() {
+                console.error('❌ Error leyendo archivo');
             };
             reader.readAsDataURL(file);
         }
@@ -1980,6 +2063,7 @@
             currentEditId = null;
             document.getElementById('modalTitle').textContent = 'Agregar Producto';
             document.getElementById('productForm').reset();
+            document.getElementById('fechaPedido').readOnly = false; // Editable en modo creación
             document.getElementById('photoPreview').style.display = 'none';
             document.getElementById('uploadPlaceholder').style.display = 'flex';
             document.getElementById('photoUpload').classList.remove('has-photo');
@@ -2064,6 +2148,7 @@
             
             // Fill form
             document.getElementById('fechaPedido').value = product.fechaPedido || '';
+            document.getElementById('fechaPedido').readOnly = true; // No editable en modo edición
             document.getElementById('categoria').value = product.categoria || '';
             updateSubcategoryOptions(); // Update subcategories based on category
             document.getElementById('subcategoria').value = product.subcategoria || '';
