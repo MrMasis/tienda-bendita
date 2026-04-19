@@ -1949,73 +1949,27 @@
             try {
                 console.log('📤 Subiendo foto a Google Drive...');
                 
-                const photoData = {
-                    base64: base64Data,
-                    filename: filename
-                };
+                // Instead of JSON in body, use URL parameters
+                const params = new URLSearchParams();
+                params.append('action', 'uploadPhoto');
+                params.append('base64', base64Data);
+                params.append('filename', filename);
                 
-                // Create form for submission
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = GOOGLE_SCRIPT_URL;
-                form.target = 'upload_iframe';
-                
-                const actionInput = document.createElement('input');
-                actionInput.type = 'hidden';
-                actionInput.name = 'action';
-                actionInput.value = 'uploadPhoto';
-                form.appendChild(actionInput);
-                
-                const dataInput = document.createElement('input');
-                dataInput.type = 'hidden';
-                dataInput.name = 'photoData';
-                dataInput.value = JSON.stringify(photoData);
-                form.appendChild(dataInput);
-                
-                // Create hidden iframe
-                let iframe = document.getElementById('upload_iframe');
-                if (!iframe) {
-                    iframe = document.createElement('iframe');
-                    iframe.id = 'upload_iframe';
-                    iframe.name = 'upload_iframe';
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-                }
-                
-                // Handle response
-                return new Promise((resolve, reject) => {
-                    // Set timeout
-                    const timeout = setTimeout(() => {
-                        reject(new Error('Timeout subiendo foto'));
-                    }, 30000); // 30 second timeout
-                    
-                    // Listen for iframe load (response received)
-                    iframe.onload = function() {
-                        clearTimeout(timeout);
-                        try {
-                            // Try to read response from iframe
-                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                            const responseText = iframeDoc.body.textContent;
-                            const response = JSON.parse(responseText);
-                            
-                            if (response.success) {
-                                console.log('✅ Foto subida exitosamente');
-                                resolve(response.url);
-                            } else {
-                                reject(new Error(response.error || 'Error desconocido'));
-                            }
-                        } catch (error) {
-                            // If we can't read the response, assume success after delay
-                            console.log('⚠️ No se pudo leer respuesta, asumiendo éxito...');
-                            setTimeout(() => resolve('uploaded'), 2000);
-                        }
-                    };
-                    
-                    // Submit form
-                    document.body.appendChild(form);
-                    form.submit();
-                    document.body.removeChild(form);
+                // Use fetch with form data
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: params
                 });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('✅ Foto subida exitosamente');
+                    console.log('URL:', result.url);
+                    return result.url;
+                } else {
+                    throw new Error(result.error || 'Error desconocido');
+                }
                 
             } catch (error) {
                 console.error('❌ Error subiendo foto:', error);
