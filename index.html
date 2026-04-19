@@ -749,9 +749,6 @@
             <div class="brand-verse">EFESIOS 3:20</div>
             <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
                 <span id="modeBadge" style="background: var(--primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; font-weight: bold;">👁️ Vista Pública</span>
-                <button id="adminBtn" onclick="showAdminLogin()" style="display: none; padding: 8px 16px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em;">
-                    🔐 Admin
-                </button>
                 <button id="logoutBtn" onclick="logout()" style="display: none; padding: 8px 16px; border: 2px solid var(--danger); background: white; color: var(--danger); border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em;">
                     🚪 Cerrar Sesión
                 </button>
@@ -1706,8 +1703,8 @@
                 
                 console.log('⏳ Esperando confirmación...');
                 
-                // Wait longer on mobile
-                const waitTime = isMobile ? 5000 : 2000;
+                // Wait much longer on mobile (photos can be slower to upload)
+                const waitTime = isMobile ? 10000 : 2000;  // 10 seconds on mobile
                 await new Promise(resolve => setTimeout(resolve, waitTime));
                 
                 console.log('✅ Producto enviado a Google Sheets');
@@ -1932,11 +1929,11 @@
                         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                         console.log(`📱 Dispositivo móvil detectado: ${isMobile}`);
                         
-                        // Calculate new dimensions (VERY aggressive on mobile)
+                        // Calculate new dimensions (EXTREMELY aggressive on mobile)
                         let width = img.width;
                         let height = img.height;
-                        const maxWidth = isMobile ? 400 : 800;  // Much smaller on mobile
-                        const maxHeight = isMobile ? 400 : 800;
+                        const maxWidth = isMobile ? 300 : 800;  // VERY small on mobile
+                        const maxHeight = isMobile ? 300 : 800;
                         
                         if (width > height) {
                             if (width > maxWidth) {
@@ -1960,18 +1957,18 @@
                         
                         console.log('🎨 Imagen dibujada en canvas');
                         
-                        // Convert to base64 with quality (VERY low on mobile)
-                        const quality = isMobile ? 0.4 : 0.7;  // 40% on mobile, 70% on desktop
+                        // Convert to base64 with quality (EXTREMELY low on mobile)
+                        const quality = isMobile ? 0.3 : 0.7;  // 30% on mobile, 70% on desktop
                         console.log(`🔧 Convirtiendo a JPEG con calidad ${quality * 100}%...`);
                         const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
                         
                         const sizeKB = (compressedBase64.length / 1024).toFixed(2);
                         console.log(`📸 Foto comprimida: ${sizeKB} KB (móvil: ${isMobile}, dimensiones: ${width}x${height}, calidad: ${quality * 100}%)`);
                         
-                        // If STILL too large (>12KB), compress more aggressively
-                        if (compressedBase64.length / 1024 > 12) {
-                            console.log('⚠️ Foto aún muy grande, recomprimiendo a 20% calidad...');
-                            const recompressed = canvas.toDataURL('image/jpeg', 0.2);
+                        // If STILL too large (>8KB), compress more aggressively
+                        if (compressedBase64.length / 1024 > 8) {
+                            console.log('⚠️ Foto aún muy grande, recomprimiendo a 15% calidad...');
+                            const recompressed = canvas.toDataURL('image/jpeg', 0.15);
                             const newSizeKB = (recompressed.length / 1024).toFixed(2);
                             console.log(`📸 Foto recomprimida: ${newSizeKB} KB`);
                             callback(recompressed);
