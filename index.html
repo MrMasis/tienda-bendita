@@ -2027,11 +2027,11 @@
                         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                         console.log(`📱 Dispositivo móvil detectado: ${isMobile}`);
                         
-                        // Calculate new dimensions (minimal compression, near-original quality)
+                        // Calculate new dimensions (optimize for Drive upload via URL)
                         let width = img.width;
                         let height = img.height;
-                        const maxWidth = isMobile ? 1200 : 1500;  // High quality
-                        const maxHeight = isMobile ? 1200 : 1500;
+                        const maxWidth = isMobile ? 800 : 1000;  // Reduced for URL transmission
+                        const maxHeight = isMobile ? 800 : 1000;
                         
                         if (width > height) {
                             if (width > maxWidth) {
@@ -2055,21 +2055,36 @@
                         
                         console.log('🎨 Imagen dibujada en canvas');
                         
-                        // Convert to base64 with minimal compression (95% quality)
-                        const quality = isMobile ? 0.95 : 0.95;  // 95% quality both devices
+                        // Convert to base64 with quality optimized for URL transmission
+                        const quality = isMobile ? 0.75 : 0.8;  // 75% mobile, 80% desktop
                         console.log(`🔧 Convirtiendo a JPEG con calidad ${quality * 100}%...`);
                         const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
                         
                         const sizeKB = (compressedBase64.length / 1024).toFixed(2);
                         console.log(`📸 Foto comprimida: ${sizeKB} KB (móvil: ${isMobile}, dimensiones: ${width}x${height}, calidad: ${quality * 100}%)`);
                         
-                        // If STILL too large (>200KB), compress to 85%
-                        if (compressedBase64.length / 1024 > 200) {
-                            console.log('⚠️ Foto muy grande (>200KB), recomprimiendo a 85% calidad...');
-                            const recompressed = canvas.toDataURL('image/jpeg', 0.85);
-                            const newSizeKB = (recompressed.length / 1024).toFixed(2);
-                            console.log(`📸 Foto recomprimida: ${newSizeKB} KB`);
-                            callback(recompressed);
+                        // If STILL too large (>50KB for URL transmission), compress more
+                        if (compressedBase64.length / 1024 > 50) {
+                            console.log('⚠️ Foto muy grande (>50KB), recomprimiendo...');
+                            
+                            // Iteratively compress until under 50KB
+                            let finalCompressed = compressedBase64;
+                            let testQuality = 0.6;
+                            
+                            while (finalCompressed.length / 1024 > 50 && testQuality > 0.3) {
+                                console.log(`🔄 Intentando con calidad ${(testQuality * 100).toFixed(0)}%...`);
+                                finalCompressed = canvas.toDataURL('image/jpeg', testQuality);
+                                testQuality -= 0.1;
+                            }
+                            
+                            const finalSizeKB = (finalCompressed.length / 1024).toFixed(2);
+                            console.log(`📸 Foto final: ${finalSizeKB} KB (calidad: ${((testQuality + 0.1) * 100).toFixed(0)}%)`);
+                            
+                            if (finalCompressed.length / 1024 > 50) {
+                                console.warn('⚠️ Foto sigue siendo muy grande, puede fallar la subida');
+                            }
+                            
+                            callback(finalCompressed);
                         } else {
                             callback(compressedBase64);
                         }
