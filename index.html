@@ -1186,7 +1186,20 @@
         
         // Convert any Drive URL to direct view format
         function convertDriveUrl(url) {
-            if (!url || !url.includes('drive.google.com')) return url;
+            if (!url) return url;
+            
+            // Clean the URL first (remove markdown formatting, whitespace, etc.)
+            url = url.toString().trim();
+            
+            // Remove markdown bold/italic if present
+            url = url.replace(/^__/, '').replace(/__$/, ''); // Remove __ at start/end
+            url = url.replace(/^\*\*/, '').replace(/\*\*$/, ''); // Remove ** at start/end
+            url = url.replace(/^_/, '').replace(/_$/, ''); // Remove _ at start/end
+            url = url.replace(/^\*/, '').replace(/\*$/, ''); // Remove * at start/end
+            
+            url = url.trim(); // Trim again after cleaning
+            
+            if (!url.includes('drive.google.com')) return url;
             
             // Extract file ID from various Drive URL formats
             let fileId = null;
@@ -1586,7 +1599,18 @@
                     console.log('📦 Datos recibidos:', data);
                     
                     if (data.products && Array.isArray(data.products)) {
-                        products = data.products;
+                        products = data.products.map(p => {
+                            // Clean photo URL if it exists (remove markdown formatting)
+                            if (p.photo && typeof p.photo === 'string') {
+                                p.photo = p.photo.trim()
+                                    .replace(/^__/, '').replace(/__$/, '')
+                                    .replace(/^\*\*/, '').replace(/\*\*$/, '')
+                                    .replace(/^_/, '').replace(/_$/, '')
+                                    .replace(/^\*/, '').replace(/\*$/, '')
+                                    .trim();
+                            }
+                            return p;
+                        });
                         localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
                         console.log(`✅ Cargados ${products.length} productos desde Sheets`);
                     } else {
