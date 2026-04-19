@@ -1148,7 +1148,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJVmvj7Rng4SISGW45mZ73nZHGWpGzKOCZBvxCPeUIZ_Y-3OwzpxuX286pPsVkOJvm/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7mRdgGKbOuhUL-Q3BgZlpaYmwUO9xpAsJx41paPoXiM-kopETl8pGZJQwaWIUhRuQ/exec';
 
         // Initialize
         async function init() {
@@ -1347,8 +1347,11 @@
             
             categoriesStructure[categoryName] = subcategories.length > 0 ? subcategories : [];
             
-            // Save categories structure to localStorage
+            // Save categories to localStorage
             localStorage.setItem('tienda_bendita_categories', JSON.stringify(categoriesStructure));
+            
+            // Save to Google Sheets
+            await saveCategoriesToSheets();
             
             closeCategoryModal();
             updateCategoryFilter();
@@ -1357,7 +1360,57 @@
             // Stay in config tab and re-render configuration
             renderConfiguration();
             
-            alert('✅ Categoría guardada. Los productos se actualizarán al editarlos.');
+            alert('✅ Categoría guardada.');
+        }
+        
+        // Save categories to Google Sheets
+        async function saveCategoriesToSheets() {
+            try {
+                console.log('💾 Guardando categorías en Sheets...');
+                
+                // Create hidden iframe for form submission
+                let iframe = document.getElementById('save_categories_iframe');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'save_categories_iframe';
+                    iframe.name = 'save_categories_iframe';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+                
+                // Create form
+                const form = document.createElement('form');
+                form.target = 'save_categories_iframe';
+                form.method = 'POST';
+                form.action = GOOGLE_SCRIPT_URL;
+                
+                // Add action parameter
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'saveCategories';
+                form.appendChild(actionInput);
+                
+                // Add categories parameter
+                const categoriesInput = document.createElement('input');
+                categoriesInput.type = 'hidden';
+                categoriesInput.name = 'categories';
+                categoriesInput.value = JSON.stringify(categoriesStructure);
+                form.appendChild(categoriesInput);
+                
+                // Submit form
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+                
+                console.log('✅ Categorías enviadas a Sheets');
+                
+                // Wait a bit
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+            } catch (error) {
+                console.error('Error saving categories:', error);
+            }
         }
         
         async function deleteCategory(categoryName) {
@@ -1391,8 +1444,11 @@
             // Delete category
             delete categoriesStructure[categoryName];
             
-            // Save categories structure to localStorage
+            // Save categories to localStorage
             localStorage.setItem('tienda_bendita_categories', JSON.stringify(categoriesStructure));
+            
+            // Save to Google Sheets
+            await saveCategoriesToSheets();
             
             updateCategoryFilter();
             updateCategorySelects();
@@ -1411,18 +1467,48 @@
         async function loadData() {
             try {
                 showSyncStatus('Cargando datos...', 'loading');
-                console.log('📥 Cargando desde localStorage...');
+                console.log('📥 Intentando cargar desde Google Sheets...');
                 
-                // Load from localStorage first (Sheets GET has 403 issues)
-                const localData = localStorage.getItem('tienda_bendita_inventory');
-                if (localData) {
-                    products = JSON.parse(localData);
-                    console.log(`✅ Cargados ${products.length} productos desde localStorage`);
+                try {
+                    // Load products
+                    const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getProducts`);
+                    console.log('📦 Datos recibidos:', data);
+                    
+                    if (data.products && Array.isArray(data.products)) {
+                        products = data.products;
+                        localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
+                        console.log(`✅ Cargados ${products.length} productos desde Sheets`);
+                    } else {
+                        throw new Error('No hay productos en la respuesta');
+                    }
+                    
+                    // Load categories
+                    try {
+                        const categoriesData = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getCategories`);
+                        if (categoriesData.categories) {
+                            categoriesStructure = categoriesData.categories;
+                            localStorage.setItem('tienda_bendita_categories', JSON.stringify(categoriesStructure));
+                            console.log(`✅ Cargadas ${Object.keys(categoriesStructure).length} categorías desde Sheets`);
+                        }
+                    } catch (catError) {
+                        console.warn('⚠️ No se pudieron cargar categorías:', catError.message);
+                    }
+                    
                     showSyncStatus('', 'synced');
-                } else {
-                    console.log('📭 No hay datos locales, iniciando vacío');
-                    products = [];
-                    showSyncStatus('', 'synced');
+                } catch (sheetsError) {
+                    console.warn('⚠️ No se pudo cargar desde Sheets:', sheetsError.message);
+                    console.log('📱 Intentando cargar desde localStorage...');
+                    
+                    const localData = localStorage.getItem('tienda_bendita_inventory');
+                    if (localData) {
+                        products = JSON.parse(localData);
+                        console.log(`✅ Cargados ${products.length} productos desde localStorage`);
+                        showSyncStatus('📱 Modo local', 'synced');
+                    } else {
+                        console.log('📭 No hay datos locales, iniciando vacío');
+                        products = [];
+                        showSyncStatus('', 'synced');
+                    }
                 }
                 
             } catch (error) {
@@ -2527,11 +2613,25 @@
 
         // Category Management Functions
         function updateCategoriesStructure() {
-            categoriesStructure = {};
+            // Load manually created categories from localStorage
+            const savedCategories = localStorage.getItem('tienda_bendita_categories');
+            if (savedCategories) {
+                try {
+                    categoriesStructure = JSON.parse(savedCategories);
+                } catch (e) {
+                    categoriesStructure = {};
+                }
+            } else {
+                categoriesStructure = {};
+            }
+            
+            // Add categories from existing products
             products.forEach(p => {
                 if (p.categoria && p.subcategoria) {
                     if (!categoriesStructure[p.categoria]) {
                         categoriesStructure[p.categoria] = new Set();
+                    } else if (Array.isArray(categoriesStructure[p.categoria])) {
+                        categoriesStructure[p.categoria] = new Set(categoriesStructure[p.categoria]);
                     }
                     categoriesStructure[p.categoria].add(p.subcategoria);
                 }
@@ -2539,7 +2639,9 @@
             
             // Convert Sets to Arrays
             Object.keys(categoriesStructure).forEach(cat => {
-                categoriesStructure[cat] = Array.from(categoriesStructure[cat]).sort();
+                if (categoriesStructure[cat] instanceof Set) {
+                    categoriesStructure[cat] = Array.from(categoriesStructure[cat]).sort();
+                }
             });
         }
 
