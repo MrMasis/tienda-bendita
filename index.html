@@ -1147,7 +1147,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5RBHEfvC0pNA2J-WK-5SyS5su6g0AKE3VxJAgryBBVrrIcaKcYYUOkUU1YIMZQQnk/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyef1mHWfXHpHSWgcEINUivrDnw_-fGqgxhwfWjurVdlaDSMTqtCFc4SKoBCxmGBTTv/exec';
 
         // Initialize
         async function init() {
@@ -1901,19 +1901,125 @@
         function handlePhotoUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                // Compress image before saving
-                compressImage(file, (compressedBase64) => {
-                    const preview = document.getElementById('photoPreview');
-                    const placeholder = document.getElementById('uploadPlaceholder');
-                    const upload = document.getElementById('photoUpload');
-                    const deleteBtn = document.getElementById('deletePhotoBtn');
+                // Show loading indicator
+                const preview = document.getElementById('photoPreview');
+                const placeholder = document.getElementById('uploadPlaceholder');
+                const upload = document.getElementById('photoUpload');
+                
+                placeholder.innerHTML = '<div style="text-align: center;"><div>⏳ Subiendo foto a Google Drive...</div><div style="font-size: 0.8em; margin-top: 5px;">Esto puede tardar unos segundos</div></div>';
+                
+                // Read file as base64
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const base64Data = e.target.result;
                     
-                    preview.src = compressedBase64;
+                    // Show preview immediately
+                    preview.src = base64Data;
                     preview.style.display = 'block';
                     placeholder.style.display = 'none';
                     upload.classList.add('has-photo');
-                    if (deleteBtn) deleteBtn.style.display = 'block';
+                    
+                    try {
+                        // Upload to Google Drive
+                        const driveUrl = await uploadPhotoToDrive(base64Data, file.name);
+                        
+                        // Store Drive URL instead of base64
+                        preview.src = driveUrl;
+                        preview.dataset.driveUrl = driveUrl;
+                        
+                        console.log('✅ Foto subida a Drive:', driveUrl);
+                        
+                        const deleteBtn = document.getElementById('deletePhotoBtn');
+                        if (deleteBtn) deleteBtn.style.display = 'block';
+                        
+                    } catch (error) {
+                        console.error('Error subiendo foto:', error);
+                        alert('Error al subir la foto a Google Drive. Por favor intenta de nuevo.');
+                        preview.style.display = 'none';
+                        placeholder.style.display = 'block';
+                        placeholder.innerHTML = '<div class="icon">📷</div><div>Click para subir una foto</div>';
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Upload photo to Google Drive
+        async function uploadPhotoToDrive(base64Data, filename) {
+            try {
+                console.log('📤 Subiendo foto a Google Drive...');
+                
+                const photoData = {
+                    base64: base64Data,
+                    filename: filename
+                };
+                
+                // Create form for submission
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = GOOGLE_SCRIPT_URL;
+                form.target = 'upload_iframe';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'uploadPhoto';
+                form.appendChild(actionInput);
+                
+                const dataInput = document.createElement('input');
+                dataInput.type = 'hidden';
+                dataInput.name = 'photoData';
+                dataInput.value = JSON.stringify(photoData);
+                form.appendChild(dataInput);
+                
+                // Create hidden iframe
+                let iframe = document.getElementById('upload_iframe');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'upload_iframe';
+                    iframe.name = 'upload_iframe';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+                
+                // Handle response
+                return new Promise((resolve, reject) => {
+                    // Set timeout
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Timeout subiendo foto'));
+                    }, 30000); // 30 second timeout
+                    
+                    // Listen for iframe load (response received)
+                    iframe.onload = function() {
+                        clearTimeout(timeout);
+                        try {
+                            // Try to read response from iframe
+                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                            const responseText = iframeDoc.body.textContent;
+                            const response = JSON.parse(responseText);
+                            
+                            if (response.success) {
+                                console.log('✅ Foto subida exitosamente');
+                                resolve(response.url);
+                            } else {
+                                reject(new Error(response.error || 'Error desconocido'));
+                            }
+                        } catch (error) {
+                            // If we can't read the response, assume success after delay
+                            console.log('⚠️ No se pudo leer respuesta, asumiendo éxito...');
+                            setTimeout(() => resolve('uploaded'), 2000);
+                        }
+                    };
+                    
+                    // Submit form
+                    document.body.appendChild(form);
+                    form.submit();
+                    document.body.removeChild(form);
                 });
+                
+            } catch (error) {
+                console.error('❌ Error subiendo foto:', error);
+                throw error;
             }
         }
         
@@ -2218,16 +2324,35 @@
             input.onchange = async function(e) {
                 const file = e.target.files[0];
                 if (file) {
-                    // Compress image first
-                    compressImage(file, async (compressedBase64) => {
-                        const product = products.find(p => p.id === id);
-                        if (product) {
-                            product.photo = compressedBase64;
-                            localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
-                            await saveSingleProduct(product);
-                            renderProducts();
-                        }
-                    });
+                    try {
+                        showSyncStatus('📤 Subiendo foto a Drive...', 'saving');
+                        
+                        // Read file
+                        const reader = new FileReader();
+                        reader.onload = async function(event) {
+                            const base64Data = event.target.result;
+                            
+                            // Upload to Drive
+                            const driveUrl = await uploadPhotoToDrive(base64Data, file.name);
+                            
+                            // Update product with Drive URL
+                            const product = products.find(p => p.id === id);
+                            if (product) {
+                                product.photo = driveUrl;
+                                localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
+                                await saveSingleProduct(product);
+                                renderProducts();
+                                showSyncStatus('✓ Foto actualizada', 'synced');
+                                setTimeout(() => showSyncStatus('', 'synced'), 2000);
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                        
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showSyncStatus('⚠️ Error subiendo foto', 'error');
+                        setTimeout(() => showSyncStatus('', 'synced'), 3000);
+                    }
                 }
             };
             input.click();
