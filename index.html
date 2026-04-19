@@ -1184,6 +1184,17 @@
             }
         });
         
+        // Event delegation for clickable photos
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('clickable-photo')) {
+                const photoUrl = e.target.dataset.photoUrl;
+                if (photoUrl) {
+                    openPhotoViewer(photoUrl);
+                    e.stopPropagation();
+                }
+            }
+        });
+        
         // Convert any Drive URL to direct view format
         function convertDriveUrl(url) {
             if (!url) return url;
@@ -2710,7 +2721,7 @@
                             ${isCustomOrder ? `<div class="custom-order-badge">🛍️ ENCARGO</div>` : ''}
                             
                             <div class="product-image">
-                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" onclick="openPhotoViewer('${p.photo}'); event.stopPropagation();" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
+                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
                                 ${!p.photo ? `<button class="add-photo-btn" onclick="event.stopPropagation(); editProduct(${p.id})">📷 Agregar Foto</button>` : ''}
                             </div>
 
@@ -2806,7 +2817,7 @@
                     return `
                         <div class="product-card">
                             <div class="product-image">
-                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" onclick="openPhotoViewer('${p.photo}')" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
+                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
                             </div>
 
                             <div class="product-info">
