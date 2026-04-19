@@ -1148,7 +1148,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7mRdgGKbOuhUL-Q3BgZlpaYmwUO9xpAsJx41paPoXiM-kopETl8pGZJQwaWIUhRuQ/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJVmvj7Rng4SISGW45mZ73nZHGWpGzKOCZBvxCPeUIZ_Y-3OwzpxuX286pPsVkOJvm/exec';
 
         // Initialize
         async function init() {
@@ -1700,6 +1700,64 @@
                 showSyncStatus('✓ Guardado local', 'synced');
             }
         }
+        
+        // Delete SINGLE product (FAST - for individual deletions)
+        async function deleteSingleProduct(productId) {
+            try {
+                console.log('🗑️ Eliminando producto:', productId);
+                showSyncStatus('Eliminando...', 'saving');
+                
+                // Create hidden iframe for form submission
+                let iframe = document.getElementById('delete_iframe');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'delete_iframe';
+                    iframe.name = 'delete_iframe';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+                
+                // Create form
+                const form = document.createElement('form');
+                form.target = 'delete_iframe';
+                form.method = 'POST';
+                form.action = GOOGLE_SCRIPT_URL;
+                
+                // Add action parameter
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'deleteProduct';
+                form.appendChild(actionInput);
+                
+                // Add productId parameter
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'productId';
+                idInput.value = productId;
+                form.appendChild(idInput);
+                
+                // Submit form
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                console.log('✅ Producto eliminado');
+                showSyncStatus('✓ Eliminado', 'synced');
+                
+                setTimeout(() => {
+                    if (syncStatus === 'synced') {
+                        showSyncStatus('', 'synced');
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                showSyncStatus('✓ Eliminado local', 'synced');
+            }
+        }
 
         // Check for updates from other devices
         async function checkForUpdates() {
@@ -2050,7 +2108,8 @@
         async function deleteProduct(id) {
             if (confirm('¿Estás seguro de eliminar este producto?')) {
                 products = products.filter(p => p.id !== id);
-                await saveData();
+                localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
+                await deleteSingleProduct(id);
                 updateCategoryFilter();
                 renderProducts();
                 updateStats();
@@ -2066,16 +2125,16 @@
             input.onchange = async function(e) {
                 const file = e.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = async function(event) {
+                    // Compress image first
+                    compressImage(file, async (compressedBase64) => {
                         const product = products.find(p => p.id === id);
                         if (product) {
-                            product.photo = event.target.result;
-                            await saveData();
+                            product.photo = compressedBase64;
+                            localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
+                            await saveSingleProduct(product);
                             renderProducts();
                         }
-                    };
-                    reader.readAsDataURL(file);
+                    });
                 }
             };
             input.click();
