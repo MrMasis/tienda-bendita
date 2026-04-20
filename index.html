@@ -1251,7 +1251,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyuFi56qRvU5s3XV0Ccn6_a5pQswnveJI8sEifRBRS0Dq6AexxMuS-cuhIrA5LpoLhNg/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby86bLZgDju2KrV7-OTXIVt3_1orlnFfK656Qw67AL4jNVU31NExbScwiMHGWSH8ssvbg/exec';
 
         // Initialize
         async function init() {
@@ -2891,7 +2891,6 @@
                 const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getReservations`);
                 if (data.reservations) {
                     reservations = data.reservations;
-                    console.log(`✅ Cargadas ${reservations.length} reservas pendientes`);
                 }
             } catch (error) {
                 console.error('Error cargando reservas:', error);
@@ -2973,34 +2972,24 @@
         async function processReservation(event) {
             event.preventDefault();
             
-            console.log('🔵 processReservation INICIADO');
-            
             const product = products.find(p => p.id === currentReserveId);
-            console.log('🔵 Producto encontrado:', product);
-            
             const selectValue = document.getElementById('reserveComprador').value;
             const nuevoInput = document.getElementById('reserveCompradorNuevo').value;
             const comprador = selectValue === '__nuevo__' ? nuevoInput.trim() : selectValue;
             const cantidad = parseInt(document.getElementById('reserveQuantity').value);
-            
-            console.log('🔵 Comprador:', comprador);
-            console.log('🔵 Cantidad:', cantidad);
 
             if (!comprador) {
-                console.log('🔴 Error: No hay comprador');
                 alert('Por favor ingresa el nombre del comprador');
                 return;
             }
 
             if (cantidad > product.disponibles) {
-                console.log('🔴 Error: Stock insuficiente');
                 alert('No hay suficiente stock disponible');
                 return;
             }
 
             try {
                 showSyncStatus('💾 Guardando reserva...', 'saving');
-                console.log('🔵 Creando URL de reserva...');
                 
                 // Add to reservations with simple parameters
                 const url = `${GOOGLE_SCRIPT_URL}?action=addReservation` +
@@ -3009,34 +2998,23 @@
                     `&cantidad=${cantidad}` +
                     `&productId=${product.id}`;
                 
-                console.log('🔵 URL:', url);
-                console.log('🔵 Llamando a jsonpRequest...');
-                
-                const response = await jsonpRequest(url);
-                console.log('🔵 Respuesta de reserva:', response);
+                await jsonpRequest(url);
                 
                 // Update product disponibles
                 product.disponibles = product.disponibles - cantidad;
-                console.log('🔵 Actualizando producto, nuevos disponibles:', product.disponibles);
                 
                 // Save updated product
                 await saveSingleProduct(product);
-                console.log('🔵 Producto guardado');
                 
-                // Reload reservations and products
-                await loadReservations();
-                console.log('🔵 Reservas recargadas');
-                
+                // Update UI
+                closeReserveModal();
                 renderProducts();
                 updateStats();
-                closeReserveModal();
                 
                 showSyncStatus('✓ Reserva creada', 'synced');
                 setTimeout(() => showSyncStatus('', 'synced'), 2000);
-                
-                alert(`✅ Producto reservado para ${comprador}\n${cantidad} unidad(es) de ${product.producto}`);
             } catch (error) {
-                console.error('🔴 Error procesando reserva:', error);
+                console.error('Error procesando reserva:', error);
                 showSyncStatus('⚠️ Error guardando reserva', 'error');
                 setTimeout(() => showSyncStatus('', 'synced'), 3000);
                 alert('Error al procesar la reserva. Por favor intenta de nuevo.');
@@ -3049,15 +3027,41 @@
             try {
                 showSyncStatus('📦 Procesando entrega...', 'saving');
                 
+                // Get reservation data BEFORE deleting
+                const reservation = reservations.find(r => r.comprador === comprador);
+                if (!reservation) {
+                    alert('Reserva no encontrada');
+                    return;
+                }
+                
+                // Update products: add to vendidas
+                for (let i = 0; i < reservation.productIds.length; i++) {
+                    const productId = reservation.productIds[i];
+                    const cantidad = reservation.cantidades[i];
+                    const product = products.find(p => p.id === productId);
+                    
+                    if (product) {
+                        product.vendidas = (product.vendidas || 0) + cantidad;
+                        product.benObtenido = product.precioVenta 
+                            ? (product.vendidas * (product.precioVenta - product.precioUnidad))
+                            : 0;
+                        
+                        // Save each product
+                        await saveSingleProduct(product);
+                    }
+                }
+                
+                // Delete reservation from Sheets
                 await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=deliverReservation&comprador=${encodeURIComponent(comprador)}`);
                 
+                // Reload data
                 await loadReservations();
                 renderReservationsTab();
+                renderProducts();
+                updateStats();
                 
                 showSyncStatus('✓ Entrega registrada', 'synced');
                 setTimeout(() => showSyncStatus('', 'synced'), 2000);
-                
-                alert(`✅ Entrega completada para ${comprador}`);
             } catch (error) {
                 console.error('Error entregando reserva:', error);
                 showSyncStatus('⚠️ Error', 'error');
@@ -3082,8 +3086,6 @@
                 
                 showSyncStatus('✓ Reserva cancelada', 'synced');
                 setTimeout(() => showSyncStatus('', 'synced'), 2000);
-                
-                alert(`✅ Reserva cancelada. Productos devueltos al inventario.`);
             } catch (error) {
                 console.error('Error cancelando reserva:', error);
                 showSyncStatus('⚠️ Error', 'error');
