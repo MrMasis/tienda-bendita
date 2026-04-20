@@ -1090,15 +1090,8 @@
             <form id="reserveForm" onsubmit="processReservation(event)">
                 <div class="form-group">
                     <label>Nombre del Comprador <span class="required">*</span></label>
-                    <select id="reserveComprador" required onchange="handleCompradorSelection()">
-                        <option value="">Selecciona un comprador...</option>
-                        <option value="__nuevo__">➕ Nuevo comprador</option>
-                    </select>
-                    <input type="text" id="reserveCompradorNuevo" style="display: none; margin-top: 10px;" placeholder="Nombre del nuevo comprador">
-                    <div id="pendingBuyersInfo" style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-radius: 6px; font-size: 0.9em; display: none;">
-                        <strong>📦 Entregas pendientes:</strong>
-                        <div id="pendingBuyersList"></div>
-                    </div>
+                    <input type="text" id="reserveComprador" required placeholder="Nombre del comprador" list="buyersList">
+                    <datalist id="buyersList"></datalist>
                 </div>
                 <div class="form-group">
                     <label>Cantidad a Reservar <span class="required">*</span></label>
@@ -2898,20 +2891,6 @@
             }
         }
         
-        function handleCompradorSelection() {
-            const select = document.getElementById('reserveComprador');
-            const nuevoInput = document.getElementById('reserveCompradorNuevo');
-            
-            if (select.value === '__nuevo__') {
-                nuevoInput.style.display = 'block';
-                nuevoInput.required = true;
-            } else {
-                nuevoInput.style.display = 'none';
-                nuevoInput.required = false;
-                nuevoInput.value = '';
-            }
-        }
-        
         async function openReserveModal(id) {
             const product = products.find(p => p.id === id);
             if (!product) return;
@@ -2921,30 +2900,17 @@
             // Load reservations first
             await loadReservations();
             
-            // Populate comprador dropdown
-            const select = document.getElementById('reserveComprador');
-            select.innerHTML = '<option value="">Selecciona un comprador...</option>';
+            // Populate buyers datalist for autocomplete
+            const datalist = document.getElementById('buyersList');
+            datalist.innerHTML = '';
             
-            // Add buyers with pending deliveries
-            reservations.forEach(res => {
-                const totalProducts = res.productos.length;
-                select.innerHTML += `<option value="${res.comprador}">${res.comprador} (${totalProducts} producto${totalProducts > 1 ? 's' : ''})</option>`;
+            // Add unique buyers from reservations
+            const uniqueBuyers = [...new Set(reservations.map(r => r.comprador))];
+            uniqueBuyers.forEach(buyer => {
+                const option = document.createElement('option');
+                option.value = buyer;
+                datalist.appendChild(option);
             });
-            
-            select.innerHTML += '<option value="__nuevo__">➕ Nuevo comprador</option>';
-            
-            // Show pending buyers info
-            const pendingInfo = document.getElementById('pendingBuyersInfo');
-            const pendingList = document.getElementById('pendingBuyersList');
-            
-            if (reservations.length > 0) {
-                pendingInfo.style.display = 'block';
-                pendingList.innerHTML = reservations.map(res => 
-                    `<div style="margin-top: 5px;">• ${res.comprador}: ${res.productos.length} producto(s)</div>`
-                ).join('');
-            } else {
-                pendingInfo.style.display = 'none';
-            }
             
             // Product info
             const info = document.getElementById('reserveProductInfo');
@@ -2958,8 +2924,6 @@
             `;
             
             document.getElementById('reserveComprador').value = '';
-            document.getElementById('reserveCompradorNuevo').value = '';
-            document.getElementById('reserveCompradorNuevo').style.display = 'none';
             document.getElementById('reserveQuantity').value = 1;
             document.getElementById('reserveQuantity').max = product.disponibles;
             document.getElementById('reserveModal').classList.add('active');
@@ -2973,9 +2937,7 @@
             event.preventDefault();
             
             const product = products.find(p => p.id === currentReserveId);
-            const selectValue = document.getElementById('reserveComprador').value;
-            const nuevoInput = document.getElementById('reserveCompradorNuevo').value;
-            const comprador = selectValue === '__nuevo__' ? nuevoInput.trim() : selectValue;
+            const comprador = document.getElementById('reserveComprador').value.trim();
             const cantidad = parseInt(document.getElementById('reserveQuantity').value);
 
             if (!comprador) {
