@@ -2973,24 +2973,34 @@
         async function processReservation(event) {
             event.preventDefault();
             
+            console.log('🔵 processReservation INICIADO');
+            
             const product = products.find(p => p.id === currentReserveId);
+            console.log('🔵 Producto encontrado:', product);
+            
             const selectValue = document.getElementById('reserveComprador').value;
             const nuevoInput = document.getElementById('reserveCompradorNuevo').value;
             const comprador = selectValue === '__nuevo__' ? nuevoInput.trim() : selectValue;
             const cantidad = parseInt(document.getElementById('reserveQuantity').value);
+            
+            console.log('🔵 Comprador:', comprador);
+            console.log('🔵 Cantidad:', cantidad);
 
             if (!comprador) {
+                console.log('🔴 Error: No hay comprador');
                 alert('Por favor ingresa el nombre del comprador');
                 return;
             }
 
             if (cantidad > product.disponibles) {
+                console.log('🔴 Error: Stock insuficiente');
                 alert('No hay suficiente stock disponible');
                 return;
             }
 
             try {
                 showSyncStatus('💾 Guardando reserva...', 'saving');
+                console.log('🔵 Creando URL de reserva...');
                 
                 // Add to reservations with simple parameters
                 const url = `${GOOGLE_SCRIPT_URL}?action=addReservation` +
@@ -2999,16 +3009,24 @@
                     `&cantidad=${cantidad}` +
                     `&productId=${product.id}`;
                 
-                await jsonpRequest(url);
+                console.log('🔵 URL:', url);
+                console.log('🔵 Llamando a jsonpRequest...');
+                
+                const response = await jsonpRequest(url);
+                console.log('🔵 Respuesta de reserva:', response);
                 
                 // Update product disponibles
                 product.disponibles = product.disponibles - cantidad;
+                console.log('🔵 Actualizando producto, nuevos disponibles:', product.disponibles);
                 
                 // Save updated product
                 await saveSingleProduct(product);
+                console.log('🔵 Producto guardado');
                 
                 // Reload reservations and products
                 await loadReservations();
+                console.log('🔵 Reservas recargadas');
+                
                 renderProducts();
                 updateStats();
                 closeReserveModal();
@@ -3018,7 +3036,7 @@
                 
                 alert(`✅ Producto reservado para ${comprador}\n${cantidad} unidad(es) de ${product.producto}`);
             } catch (error) {
-                console.error('Error procesando reserva:', error);
+                console.error('🔴 Error procesando reserva:', error);
                 showSyncStatus('⚠️ Error guardando reserva', 'error');
                 setTimeout(() => showSyncStatus('', 'synced'), 3000);
                 alert('Error al procesar la reserva. Por favor intenta de nuevo.');
