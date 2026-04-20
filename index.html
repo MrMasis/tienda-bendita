@@ -325,7 +325,7 @@
 
         .product-image {
             width: 100%;
-            height: 220px;
+            aspect-ratio: 1 / 1;
             background: linear-gradient(135deg, var(--accent) 0%, #fff 100%);
             display: flex;
             align-items: center;
@@ -340,6 +340,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center;
         }
         
         .product-image .no-photo-icon {
@@ -917,6 +918,11 @@
                         <input type="text" id="color">
                     </div>
 
+                    <div class="form-group">
+                        <label>Comentario</label>
+                        <input type="text" id="comentario" placeholder="Ej: Se vende por unidad">
+                    </div>
+
                     <!-- Pricing -->
                     <div class="form-group">
                         <label>Cantidad <span class="required">*</span></label>
@@ -1244,7 +1250,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzheG9vz_fF8wus7oQuO52bmeBf4ibIJBSH4AB6482wJtEM5YppaiSWZhsls00jSanX8Q/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfoPQDM5txIGsjNkqhx7Kxv8KXNKrgC7CqHrWoNABUlOcH5Ppqyupw0Hidyrh1LOm-TQ/exec';
 
         // Initialize
         async function init() {
@@ -2300,6 +2306,7 @@
                 producto: document.getElementById('producto').value,
                 materiales: document.getElementById('materiales').value || null,
                 color: document.getElementById('color').value || null,
+                comentario: document.getElementById('comentario').value || null,
                 cantidad: parseFloat(document.getElementById('cantidad').value),
                 totalInvertido: parseFloat(document.getElementById('totalInvertido').value),
                 precioUnidad: parseFloat(document.getElementById('precioUnidad').value),
@@ -2348,6 +2355,7 @@
             document.getElementById('producto').value = product.producto || '';
             document.getElementById('materiales').value = product.materiales || '';
             document.getElementById('color').value = product.color || '';
+            document.getElementById('comentario').value = product.comentario || '';
             document.getElementById('cantidad').value = product.cantidad || 0;
             document.getElementById('totalInvertido').value = product.totalInvertido || 0;
             document.getElementById('precioVenta').value = product.precioVenta || 0;
@@ -2720,6 +2728,13 @@
                                     </div>
                                 </div>
 
+                                ${p.comentario ? `
+                                    <div style="margin-top: 8px; padding: 8px; background: #f7fafc; border-radius: 6px; border-left: 3px solid var(--primary);">
+                                        <div style="font-size: 0.75em; color: var(--gray); margin-bottom: 2px;">💬 Comentario:</div>
+                                        <div style="font-size: 0.85em; color: var(--dark); font-style: italic;">${p.comentario}</div>
+                                    </div>
+                                ` : ''}
+
                                 <div class="stock-indicator ${isAvailable ? 'stock-ok' : 'stock-out'}">
                                     ${isAvailable ? '✅ Disponible' : '❌ No Disponible'} (${p.disponibles}/${p.cantidad})
                                 </div>
@@ -2788,6 +2803,13 @@
                                         <strong style="color: var(--primary);">$${p.precioVenta.toFixed(2)}</strong>
                                     </div>
                                 </div>
+
+                                ${p.comentario ? `
+                                    <div style="margin-top: 8px; padding: 8px; background: #f7fafc; border-radius: 6px; border-left: 3px solid var(--primary);">
+                                        <div style="font-size: 0.75em; color: var(--gray); margin-bottom: 2px;">💬 Nota:</div>
+                                        <div style="font-size: 0.85em; color: var(--dark); font-style: italic;">${p.comentario}</div>
+                                    </div>
+                                ` : ''}
 
                                 <div class="stock-indicator ${isAvailable ? 'stock-ok' : 'stock-out'}" style="margin-top: 15px;">
                                     ${isAvailable ? `✅ Disponible (${p.disponibles} unidades)` : '❌ No Disponible'}
@@ -3561,7 +3583,8 @@
                             disponibles: parseFloat(row[colMap['DISPONIBLES']]) || 0,
                             benObtenido: parseFloat(row[colMap['BEN. OBTENIDO']]) || 0,
                             margen: parseFloat(row[colMap['MARGEN']]) || 0,
-                            photo: row[colMap['FOTO']] || row[colMap['PHOTO']] || null
+                            photo: row[colMap['FOTO']] || row[colMap['PHOTO']] || null,
+                            comentario: row[colMap['COMENTARIO']] || null
                         };
                         
                         // Convert Drive URL if present
@@ -3635,7 +3658,8 @@
                 'DISPONIBLES': p.disponibles,
                 'BEN. OBTENIDO': p.benObtenido,
                 'MARGEN': p.margen,
-                'FOTO': p.photo || ''
+                'FOTO': p.photo || '',
+                'COMENTARIO': p.comentario || ''
             }));
 
             const ws = XLSX.utils.json_to_sheet(data);
