@@ -787,9 +787,6 @@
             <button class="nav-tab admin-only" onclick="switchTab('reservations')" style="display: none;">
                 📋 Reservas Pendientes
             </button>
-            <button class="nav-tab admin-only" onclick="switchTab('orders')" style="display: none;">
-                🛍️ Encargos
-            </button>
             <button class="nav-tab admin-only" onclick="switchTab('stats')" style="display: none;">
                 📊 Estadísticas
             </button>
@@ -918,37 +915,6 @@
                     <div class="form-group">
                         <label>Color Principal</label>
                         <input type="text" id="color">
-                    </div>
-
-                    <!-- Custom Order Info -->
-                    <div class="form-group full-width">
-                        <label>
-                            <input type="checkbox" id="pedidoSolicitado" onchange="toggleCustomOrder()">
-                            Es un Encargo / Pedido Solicitado
-                        </label>
-                    </div>
-
-                    <div id="orderFields" style="display: none; grid-column: 1 / -1;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div class="form-group">
-                                <label>Nombre del Comprador <span class="required">*</span></label>
-                                <input type="text" id="comprador" list="compradoresList" placeholder="Escribe o selecciona un comprador">
-                                <datalist id="compradoresList"></datalist>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Cantidad Encargada <span class="required">*</span></label>
-                                <input type="number" id="cantidadEncargada" min="1">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Estado del Encargo</label>
-                                <select id="estadoEncargo">
-                                    <option value="Pendiente">Pendiente</option>
-                                    <option value="Entregado">Entregado</option>
-                                </select>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Pricing -->
@@ -2051,13 +2017,6 @@
                 statsGrid.style.display = 'none';
                 inventoryControls.style.display = 'none'; // Hide controls in config
                 renderConfiguration();
-            } else if (tab === 'orders') {
-                // Show orders grouped by client
-                productsGrid.style.display = 'grid';
-                statsGrid.style.display = 'grid';
-                inventoryControls.style.display = 'block';
-                renderOrdersByClient();
-                updateStats();
             } else {
                 // Regular inventory view
                 productsGrid.style.display = 'grid';
@@ -2277,23 +2236,6 @@
         }
 
         // Toggle Custom Order
-        function toggleCustomOrder() {
-            const checked = document.getElementById('pedidoSolicitado').checked;
-            const orderFields = document.getElementById('orderFields');
-            const compradorField = document.getElementById('comprador');
-            const cantidadEncargadaField = document.getElementById('cantidadEncargada');
-            
-            if (checked) {
-                orderFields.style.display = 'block';
-                compradorField.required = true;
-                cantidadEncargadaField.required = true;
-            } else {
-                orderFields.style.display = 'none';
-                compradorField.required = false;
-                cantidadEncargadaField.required = false;
-            }
-        }
-
         // Calculate Fields
         function calculateFields() {
             const cantidad = parseFloat(document.getElementById('cantidad').value) || 0;
@@ -2334,14 +2276,12 @@
             document.getElementById('photoDriveUrl').value = ''; // Limpiar URL de Drive
             const deleteBtn = document.getElementById('deletePhotoBtn');
             if (deleteBtn) deleteBtn.style.display = 'none';
-            document.getElementById('orderFields').style.display = 'none';
             
             // Set default date to today
             document.getElementById('fechaPedido').value = new Date().toISOString().split('T')[0];
             
             // Update lists for autocomplete
             updateCategorySelects();
-            updateBuyersList();
             
             calculateFields();
             document.getElementById('productModal').classList.add('active');
@@ -2365,10 +2305,6 @@
                 categoria: document.getElementById('categoria').value,
                 subcategoria: document.getElementById('subcategoria').value,
                 producto: document.getElementById('producto').value,
-                pedidoSolicitado: document.getElementById('pedidoSolicitado').checked ? 'Sí' : null,
-                comprador: document.getElementById('comprador').value || null,
-                cantidadEncargada: document.getElementById('pedidoSolicitado').checked ? parseFloat(document.getElementById('cantidadEncargada').value) || 0 : null,
-                estadoEncargo: document.getElementById('pedidoSolicitado').checked ? document.getElementById('estadoEncargo').value : null,
                 materiales: document.getElementById('materiales').value || null,
                 color: document.getElementById('color').value || null,
                 cantidad: parseFloat(document.getElementById('cantidad').value),
@@ -2409,7 +2345,6 @@
             
             // Update lists for autocomplete
             updateCategorySelects();
-            updateBuyersList();
             
             // Fill form
             document.getElementById('fechaPedido').value = product.fechaPedido || '';
@@ -2418,10 +2353,6 @@
             updateSubcategoryOptions(); // Update subcategories based on category
             document.getElementById('subcategoria').value = product.subcategoria || '';
             document.getElementById('producto').value = product.producto || '';
-            document.getElementById('pedidoSolicitado').checked = product.pedidoSolicitado === 'Sí';
-            document.getElementById('comprador').value = product.comprador || '';
-            document.getElementById('cantidadEncargada').value = product.cantidadEncargada || '';
-            document.getElementById('estadoEncargo').value = product.estadoEncargo || 'Pendiente';
             document.getElementById('materiales').value = product.materiales || '';
             document.getElementById('color').value = product.color || '';
             document.getElementById('cantidad').value = product.cantidad || 0;
@@ -2429,7 +2360,6 @@
             document.getElementById('precioVenta').value = product.precioVenta || 0;
             document.getElementById('vendidas').value = product.vendidas || 0;
 
-            toggleCustomOrder();
             calculateFields();
 
             // Photo
@@ -2661,22 +2591,6 @@
             updateSubcategoryFilter();
         }
 
-        // Update Buyers List
-        function updateBuyersList() {
-            const buyers = [...new Set(products
-                .filter(p => p.comprador)
-                .map(p => p.comprador)
-            )].sort();
-            
-            const datalist = document.getElementById('compradoresList');
-            datalist.innerHTML = '';
-            buyers.forEach(buyer => {
-                const option = document.createElement('option');
-                option.value = buyer;
-                datalist.appendChild(option);
-            });
-        }
-
         // Apply Filters
         function applyFilters() {
             const search = document.getElementById('searchInput').value.toLowerCase();
@@ -2684,12 +2598,6 @@
             const subcategoryFilter = document.getElementById('subcategoryFilter').value;
 
             let filtered = products.filter(p => {
-                // Tab filter (admin only)
-                if (isAdminMode) {
-                    if (currentTab === 'orders' && p.pedidoSolicitado !== 'Sí') return false;
-                    if (currentTab === 'inventory' && p.pedidoSolicitado === 'Sí') return false;
-                }
-
                 // Public mode: only show available products
                 if (!isAdminMode && p.disponibles <= 0) return false;
 
@@ -2768,12 +2676,10 @@
             if (isAdminMode) {
                 // ADMIN VIEW - Full information
                 grid.innerHTML = filtered.map(p => {
-                    const isCustomOrder = p.pedidoSolicitado === 'Sí';
                     const isAvailable = p.disponibles > 0;
 
                     return `
-                        <div class="product-card ${isCustomOrder ? 'custom-order' : ''}">
-                            ${isCustomOrder ? `<div class="custom-order-badge">🛍️ ENCARGO</div>` : ''}
+                        <div class="product-card">
                             
                             <div class="product-image">
                                 ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
@@ -2785,13 +2691,6 @@
                                     <div class="product-name">${p.producto}</div>
                                     ${p.categoria ? `<div class="product-category">${p.categoria}</div>` : ''}
                                 </div>
-
-                                ${isCustomOrder && p.comprador ? `
-                                    <div class="product-detail full-width" style="background: var(--accent); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
-                                        <span>👤 Cliente:</span>
-                                        <strong>${p.comprador}</strong>
-                                    </div>
-                                ` : ''}
 
                                 <div class="product-details">
                                     ${p.materiales ? `
@@ -3093,17 +2992,14 @@
             try {
                 showSyncStatus('💾 Guardando reserva...', 'saving');
                 
-                // Add to reservations
-                const reservationData = {
-                    comprador: comprador,
-                    producto: product.producto,
-                    cantidad: cantidad,
-                    productId: product.id
-                };
+                // Add to reservations with simple parameters
+                const url = `${GOOGLE_SCRIPT_URL}?action=addReservation` +
+                    `&comprador=${encodeURIComponent(comprador)}` +
+                    `&producto=${encodeURIComponent(product.producto)}` +
+                    `&cantidad=${cantidad}` +
+                    `&productId=${product.id}`;
                 
-                await jsonpRequest(
-                    `${GOOGLE_SCRIPT_URL}?action=addReservation&data=${encodeURIComponent(JSON.stringify(reservationData))}`
-                );
+                await jsonpRequest(url);
                 
                 // Update product disponibles
                 product.disponibles = product.disponibles - cantidad;
@@ -3473,154 +3369,6 @@
         }
 
         // Render Orders Grouped by Client
-        function renderOrdersByClient() {
-            const grid = document.getElementById('productsGrid');
-            
-            // Get all orders
-            const orders = products.filter(p => p.pedidoSolicitado === 'Sí' && p.comprador);
-            
-            if (orders.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
-                        <div class="empty-state-icon">🛍️</div>
-                        <h3>No hay encargos registrados</h3>
-                        <p>Los productos marcados como encargo aparecerán aquí agrupados por cliente</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Group by client
-            const clientsMap = {};
-            orders.forEach(p => {
-                const cliente = p.comprador;
-                if (!clientsMap[cliente]) {
-                    clientsMap[cliente] = [];
-                }
-                clientsMap[cliente].push(p);
-            });
-            
-            // Render grouped orders
-            let html = '<div style="grid-column: 1 / -1; display: grid; gap: 25px;">';
-            
-            Object.entries(clientsMap).forEach(([cliente, productos]) => {
-                const totalProductos = productos.length;
-                const pendientes = productos.filter(p => p.estadoEncargo === 'Pendiente').length;
-                const entregados = productos.filter(p => p.estadoEncargo === 'Entregado').length;
-                const totalPrecio = productos.reduce((sum, p) => sum + (p.precioVenta * (p.cantidadEncargada || 1)), 0);
-                
-                html += `
-                    <div style="background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); border-left: 5px solid var(--primary);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
-                            <div>
-                                <h3 style="color: var(--dark); font-size: 1.5em; margin-bottom: 5px;">
-                                    👤 ${cliente}
-                                </h3>
-                                <p style="color: var(--gray);">
-                                    ${totalProductos} producto${totalProductos !== 1 ? 's' : ''} • 
-                                    ${pendientes} pendiente${pendientes !== 1 ? 's' : ''} • 
-                                    ${entregados} entregado${entregados !== 1 ? 's' : ''}
-                                </p>
-                            </div>
-                            <div style="text-align: right;">
-                                <p style="color: var(--gray); font-size: 0.9em;">Total del pedido</p>
-                                <p style="font-size: 1.8em; font-weight: bold; color: var(--primary);">$${totalPrecio.toFixed(2)}</p>
-                            </div>
-                        </div>
-                        
-                        <div style="display: grid; gap: 15px;">
-                            ${productos.map(p => {
-                                const isPending = p.estadoEncargo === 'Pendiente';
-                                return `
-                                    <div style="background: ${isPending ? 'var(--light-bg)' : '#c6f6d5'}; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
-                                        <div style="flex: 1; min-width: 200px;">
-                                            <p style="font-weight: bold; color: var(--dark); margin-bottom: 5px;">${p.producto}</p>
-                                            <p style="color: var(--gray); font-size: 0.9em;">
-                                                Cantidad: ${p.cantidadEncargada || 1} • 
-                                                Precio: $${p.precioVenta.toFixed(2)} c/u • 
-                                                Total: $${(p.precioVenta * (p.cantidadEncargada || 1)).toFixed(2)}
-                                            </p>
-                                        </div>
-                                        <div style="display: flex; gap: 10px; align-items: center;">
-                                            ${isPending ? `
-                                                <span style="background: var(--warning); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold;">
-                                                    ⏳ Pendiente
-                                                </span>
-                                                <button class="btn btn-success btn-small" onclick="deliverOrder(${p.id})">
-                                                    📦 Entregar
-                                                </button>
-                                            ` : `
-                                                <span style="background: var(--success); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold;">
-                                                    ✅ Entregado
-                                                </span>
-                                            `}
-                                            <button class="btn btn-secondary btn-small" onclick="editProduct(${p.id})">
-                                                ✏️
-                                            </button>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                        
-                        ${pendientes > 0 ? `
-                            <button class="btn btn-primary" style="width: 100%; margin-top: 15px; padding: 12px;" onclick="deliverAllClientOrders('${cliente}')">
-                                📦 Entregar Todo el Pedido de ${cliente}
-                            </button>
-                        ` : ''}
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            grid.innerHTML = html;
-        }
-
-        // Deliver single order
-        async function deliverOrder(id) {
-            const product = products.find(p => p.id === id);
-            if (!product) return;
-            
-            if (confirm(`¿Entregar encargo de "${product.producto}" a ${product.comprador}?`)) {
-                // Mark as delivered
-                product.estadoEncargo = 'Entregado';
-                
-                // Register sale
-                const cantidadEntregada = product.cantidadEncargada || 1;
-                product.vendidas = (product.vendidas || 0) + cantidadEntregada;
-                product.disponibles = product.cantidad - product.vendidas;
-                product.benObtenido = product.cantidad > 0 ? product.vendidas * product.benEsperado / product.cantidad : 0;
-                
-                await saveData();
-                renderOrdersByClient();
-                updateStats();
-            }
-        }
-
-        // Deliver all orders for a client
-        async function deliverAllClientOrders(cliente) {
-            const clientOrders = products.filter(p => 
-                p.comprador === cliente && 
-                p.estadoEncargo === 'Pendiente'
-            );
-            
-            if (clientOrders.length === 0) return;
-            
-            if (confirm(`¿Entregar todos los ${clientOrders.length} productos pendientes de ${cliente}?`)) {
-                clientOrders.forEach(product => {
-                    product.estadoEncargo = 'Entregado';
-                    const cantidadEntregada = product.cantidadEncargada || 1;
-                    product.vendidas = (product.vendidas || 0) + cantidadEntregada;
-                    product.disponibles = product.cantidad - product.vendidas;
-                    product.benObtenido = product.cantidad > 0 ? product.vendidas * product.benEsperado / product.cantidad : 0;
-                });
-                
-                await saveData();
-                renderOrdersByClient();
-                updateStats();
-            }
-        }
-
         // Render Configuration Tab
         function renderConfiguration() {
             const grid = document.getElementById('productsGrid');
