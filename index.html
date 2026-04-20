@@ -626,6 +626,20 @@
             color: var(--primary);
         }
 
+        /* Reservation Cards */
+        .reservation-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .reservation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
         /* Import Section */
         .import-section {
             background: white;
@@ -770,6 +784,9 @@
             <button class="nav-tab admin-only active" onclick="switchTab('inventory')" style="display: none;">
                 📦 Inventario General
             </button>
+            <button class="nav-tab admin-only" onclick="switchTab('reservations')" style="display: none;">
+                📋 Reservas Pendientes
+            </button>
             <button class="nav-tab admin-only" onclick="switchTab('orders')" style="display: none;">
                 🛍️ Encargos
             </button>
@@ -825,6 +842,11 @@
         <!-- Products Grid -->
         <div class="products-grid" id="productsGrid">
             <!-- Products will be rendered here -->
+        </div>
+        
+        <!-- Reservations Grid -->
+        <div class="products-grid" id="reservationsGrid" style="display: none;">
+            <!-- Reservations will be rendered here -->
         </div>
     </div>
 
@@ -1102,7 +1124,15 @@
             <form id="reserveForm" onsubmit="processReservation(event)">
                 <div class="form-group">
                     <label>Nombre del Comprador <span class="required">*</span></label>
-                    <input type="text" id="reserveComprador" list="compradoresList" required placeholder="Escribe o selecciona un comprador">
+                    <select id="reserveComprador" required onchange="handleCompradorSelection()">
+                        <option value="">Selecciona un comprador...</option>
+                        <option value="__nuevo__">➕ Nuevo comprador</option>
+                    </select>
+                    <input type="text" id="reserveCompradorNuevo" style="display: none; margin-top: 10px;" placeholder="Nombre del nuevo comprador">
+                    <div id="pendingBuyersInfo" style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-radius: 6px; font-size: 0.9em; display: none;">
+                        <strong>📦 Entregas pendientes:</strong>
+                        <div id="pendingBuyersList"></div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Cantidad a Reservar <span class="required">*</span></label>
@@ -1151,6 +1181,7 @@
     <script>
         // Global State
         let products = [];
+        let reservations = []; // Nueva: lista de reservas pendientes
         let currentTab = 'inventory';
         let currentEditId = null;
         let currentSellId = null;
@@ -1260,6 +1291,7 @@
         async function init() {
             showSyncStatus('Cargando datos...', 'loading');
             await loadData();
+            await loadReservations(); // Load reservations on startup
             updateCategoriesStructure();
             updateCategoryFilter();
             updateCategorySelects();
@@ -1987,10 +2019,21 @@
             event.target.classList.add('active');
             
             const productsGrid = document.getElementById('productsGrid');
+            const reservationsGrid = document.getElementById('reservationsGrid');
             const statsGrid = document.getElementById('statsGrid');
             const inventoryControls = document.getElementById('inventoryControls');
             
-            if (tab === 'finances') {
+            // Hide all grids first
+            productsGrid.style.display = 'none';
+            reservationsGrid.style.display = 'none';
+            statsGrid.style.display = 'none';
+            
+            if (tab === 'reservations') {
+                // Show reservations view
+                reservationsGrid.style.display = 'grid';
+                inventoryControls.style.display = 'none';
+                loadReservations().then(() => renderReservationsTab());
+            } else if (tab === 'finances') {
                 // Show finances view
                 productsGrid.style.display = 'grid';
                 statsGrid.style.display = 'none';
@@ -2942,13 +2985,70 @@
         }
 
         // Reserve Modal Functions
-        function openReserveModal(id) {
+        // ===== RESERVATION SYSTEM =====
+        
+        async function loadReservations() {
+            try {
+                const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getReservations`);
+                if (data.reservations) {
+                    reservations = data.reservations;
+                    console.log(`✅ Cargadas ${reservations.length} reservas pendientes`);
+                }
+            } catch (error) {
+                console.error('Error cargando reservas:', error);
+                reservations = [];
+            }
+        }
+        
+        function handleCompradorSelection() {
+            const select = document.getElementById('reserveComprador');
+            const nuevoInput = document.getElementById('reserveCompradorNuevo');
+            
+            if (select.value === '__nuevo__') {
+                nuevoInput.style.display = 'block';
+                nuevoInput.required = true;
+            } else {
+                nuevoInput.style.display = 'none';
+                nuevoInput.required = false;
+                nuevoInput.value = '';
+            }
+        }
+        
+        async function openReserveModal(id) {
             const product = products.find(p => p.id === id);
             if (!product) return;
 
             currentReserveId = id;
-            updateBuyersList();
             
+            // Load reservations first
+            await loadReservations();
+            
+            // Populate comprador dropdown
+            const select = document.getElementById('reserveComprador');
+            select.innerHTML = '<option value="">Selecciona un comprador...</option>';
+            
+            // Add buyers with pending deliveries
+            reservations.forEach(res => {
+                const totalProducts = res.productos.length;
+                select.innerHTML += `<option value="${res.comprador}">${res.comprador} (${totalProducts} producto${totalProducts > 1 ? 's' : ''})</option>`;
+            });
+            
+            select.innerHTML += '<option value="__nuevo__">➕ Nuevo comprador</option>';
+            
+            // Show pending buyers info
+            const pendingInfo = document.getElementById('pendingBuyersInfo');
+            const pendingList = document.getElementById('pendingBuyersList');
+            
+            if (reservations.length > 0) {
+                pendingInfo.style.display = 'block';
+                pendingList.innerHTML = reservations.map(res => 
+                    `<div style="margin-top: 5px;">• ${res.comprador}: ${res.productos.length} producto(s)</div>`
+                ).join('');
+            } else {
+                pendingInfo.style.display = 'none';
+            }
+            
+            // Product info
             const info = document.getElementById('reserveProductInfo');
             info.innerHTML = `
                 <div style="text-align: center; padding: 20px; background: var(--light-bg); border-radius: 12px; margin-bottom: 20px;">
@@ -2958,7 +3058,10 @@
                     <p style="color: var(--gray);">Precio: <strong>$${product.precioVenta.toFixed(2)}</strong></p>
                 </div>
             `;
+            
             document.getElementById('reserveComprador').value = '';
+            document.getElementById('reserveCompradorNuevo').value = '';
+            document.getElementById('reserveCompradorNuevo').style.display = 'none';
             document.getElementById('reserveQuantity').value = 1;
             document.getElementById('reserveQuantity').max = product.disponibles;
             document.getElementById('reserveModal').classList.add('active');
@@ -2972,26 +3075,156 @@
             event.preventDefault();
             
             const product = products.find(p => p.id === currentReserveId);
-            const comprador = document.getElementById('reserveComprador').value;
+            const selectValue = document.getElementById('reserveComprador').value;
+            const nuevoInput = document.getElementById('reserveCompradorNuevo').value;
+            const comprador = selectValue === '__nuevo__' ? nuevoInput.trim() : selectValue;
             const cantidad = parseInt(document.getElementById('reserveQuantity').value);
+
+            if (!comprador) {
+                alert('Por favor ingresa el nombre del comprador');
+                return;
+            }
 
             if (cantidad > product.disponibles) {
                 alert('No hay suficiente stock disponible');
                 return;
             }
 
-            // Mark as order
-            product.pedidoSolicitado = 'Sí';
-            product.comprador = comprador;
-            product.cantidadEncargada = cantidad;
-            product.estadoEncargo = 'Pendiente';
-
-            await saveData();
-            renderProducts();
-            updateStats();
-            closeReserveModal();
+            try {
+                showSyncStatus('💾 Guardando reserva...', 'saving');
+                
+                // Add to reservations
+                const reservationData = {
+                    comprador: comprador,
+                    producto: product.producto,
+                    cantidad: cantidad,
+                    productId: product.id
+                };
+                
+                await jsonpRequest(
+                    `${GOOGLE_SCRIPT_URL}?action=addReservation&data=${encodeURIComponent(JSON.stringify(reservationData))}`
+                );
+                
+                // Update product disponibles
+                product.disponibles = product.disponibles - cantidad;
+                
+                // Save updated product
+                await saveSingleProduct(product);
+                
+                // Reload reservations and products
+                await loadReservations();
+                renderProducts();
+                updateStats();
+                closeReserveModal();
+                
+                showSyncStatus('✓ Reserva creada', 'synced');
+                setTimeout(() => showSyncStatus('', 'synced'), 2000);
+                
+                alert(`✅ Producto reservado para ${comprador}\n${cantidad} unidad(es) de ${product.producto}`);
+            } catch (error) {
+                console.error('Error procesando reserva:', error);
+                showSyncStatus('⚠️ Error guardando reserva', 'error');
+                setTimeout(() => showSyncStatus('', 'synced'), 3000);
+                alert('Error al procesar la reserva. Por favor intenta de nuevo.');
+            }
+        }
+        
+        async function deliverReservation(comprador) {
+            if (!confirm(`¿Confirmar entrega completa para ${comprador}?`)) return;
             
-            alert(`✅ Producto reservado para ${comprador}`);
+            try {
+                showSyncStatus('📦 Procesando entrega...', 'saving');
+                
+                await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=deliverReservation&comprador=${encodeURIComponent(comprador)}`);
+                
+                await loadReservations();
+                renderReservationsTab();
+                
+                showSyncStatus('✓ Entrega registrada', 'synced');
+                setTimeout(() => showSyncStatus('', 'synced'), 2000);
+                
+                alert(`✅ Entrega completada para ${comprador}`);
+            } catch (error) {
+                console.error('Error entregando reserva:', error);
+                showSyncStatus('⚠️ Error', 'error');
+                setTimeout(() => showSyncStatus('', 'synced'), 3000);
+                alert('Error al procesar la entrega. Por favor intenta de nuevo.');
+            }
+        }
+        
+        async function cancelReservation(comprador) {
+            if (!confirm(`¿Cancelar reserva de ${comprador}?\n\nLos productos volverán al inventario disponible.`)) return;
+            
+            try {
+                showSyncStatus('🔄 Cancelando reserva...', 'saving');
+                
+                await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=cancelReservation&comprador=${encodeURIComponent(comprador)}`);
+                
+                // Reload both
+                await Promise.all([loadReservations(), loadData()]);
+                renderProducts();
+                renderReservationsTab();
+                updateStats();
+                
+                showSyncStatus('✓ Reserva cancelada', 'synced');
+                setTimeout(() => showSyncStatus('', 'synced'), 2000);
+                
+                alert(`✅ Reserva cancelada. Productos devueltos al inventario.`);
+            } catch (error) {
+                console.error('Error cancelando reserva:', error);
+                showSyncStatus('⚠️ Error', 'error');
+                setTimeout(() => showSyncStatus('', 'synced'), 3000);
+                alert('Error al cancelar la reserva. Por favor intenta de nuevo.');
+            }
+        }
+        
+        function renderReservationsTab() {
+            const grid = document.getElementById('reservationsGrid');
+            
+            if (reservations.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <h3>No hay entregas pendientes</h3>
+                        <p>Las reservas aparecerán aquí cuando se hagan</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            grid.innerHTML = reservations.map(res => {
+                const totalProducts = res.productos.length;
+                const productsList = res.productos.map((prod, i) => 
+                    `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">
+                        <strong>${prod}</strong> × ${res.cantidades[i]}
+                    </div>`
+                ).join('');
+                
+                return `
+                    <div class="reservation-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                            <div>
+                                <h3 style="margin: 0 0 5px 0; color: var(--dark);">${res.comprador}</h3>
+                                <p style="margin: 0; color: var(--gray); font-size: 0.9em;">${totalProducts} producto${totalProducts > 1 ? 's' : ''} reservado${totalProducts > 1 ? 's' : ''}</p>
+                            </div>
+                            <span style="background: var(--accent); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em;">Pendiente</span>
+                        </div>
+                        
+                        <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            ${productsList}
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-success" onclick="deliverReservation('${res.comprador}')" style="flex: 1;">
+                                ✓ Entregar Todo
+                            </button>
+                            <button class="btn btn-danger" onclick="cancelReservation('${res.comprador}')" style="flex: 1;">
+                                ✕ Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // Category Management Functions
