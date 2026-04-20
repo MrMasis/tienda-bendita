@@ -3561,8 +3561,13 @@
                             disponibles: parseFloat(row[colMap['DISPONIBLES']]) || 0,
                             benObtenido: parseFloat(row[colMap['BEN. OBTENIDO']]) || 0,
                             margen: parseFloat(row[colMap['MARGEN']]) || 0,
-                            photo: null
+                            photo: row[colMap['FOTO']] || row[colMap['PHOTO']] || null
                         };
+                        
+                        // Convert Drive URL if present
+                        if (product.photo) {
+                            product.photo = convertDriveUrl(product.photo);
+                        }
 
                         // Recalculate if needed
                         if (product.cantidad > 0 && product.totalInvertido > 0) {
