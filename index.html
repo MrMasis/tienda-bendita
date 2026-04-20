@@ -2474,7 +2474,7 @@
             // Recalculate benefit obtained
             product.benObtenido = product.cantidad > 0 ? product.vendidas * product.benEsperado / product.cantidad : 0;
 
-            await saveData();
+            await saveSingleProduct(product);
             renderProducts();
             updateStats();
             closeSellModal();
@@ -2556,7 +2556,7 @@
             product.margen = product.precioUnidad > 0 ? ((product.precioVenta - product.precioUnidad) / product.precioUnidad) * 100 : 0;
             product.benObtenido = product.cantidad > 0 ? product.vendidas * product.benEsperado / product.cantidad : 0;
 
-            await saveData();
+            await saveSingleProduct(product);
             renderProducts();
             updateStats();
             closeRestockModal();
@@ -3269,8 +3269,8 @@
             
             // Break-even point
             const totalInversionGeneral = products.reduce((sum, p) => sum + (p.totalInvertido || 0), 0);
-            const gananciaObtenida = products.reduce((sum, p) => sum + (p.benObtenido || 0), 0);
-            const breakEvenPercentage = totalInversionGeneral > 0 ? ((gananciaObtenida / totalInversionGeneral) * 100) : 0;
+            const dineroTotalVendido = products.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.vendidas || 0)), 0);
+            const breakEvenPercentage = totalInversionGeneral > 0 ? ((dineroTotalVendido / totalInversionGeneral) * 100) : 0;
             const faltaPorcentaje = Math.max(0, 100 - breakEvenPercentage);
             const alcanzado = breakEvenPercentage >= 100;
             
@@ -3335,8 +3335,8 @@
                                     <p style="font-size: 1.8em; font-weight: bold; color: var(--warning);">$${totalInversionGeneral.toFixed(2)}</p>
                                 </div>
                                 <div style="margin-bottom: 20px;">
-                                    <p style="color: var(--gray); margin-bottom: 5px;">Ganancia Obtenida</p>
-                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--success);">$${gananciaObtenida.toFixed(2)}</p>
+                                    <p style="color: var(--gray); margin-bottom: 5px;">Dinero Total Vendido</p>
+                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--success);">$${dineroTotalVendido.toFixed(2)}</p>
                                 </div>
                                 <div style="background: ${alcanzado ? 'linear-gradient(135deg, var(--success) 0%, #38a169 100%)' : 'var(--light-bg)'}; padding: 20px; border-radius: 10px; color: ${alcanzado ? 'white' : 'inherit'};">
                                     <p style="margin-bottom: 10px; font-weight: bold;">${alcanzado ? '✅ PUNTO DE EQUILIBRIO ALCANZADO' : 'Progreso'}</p>
