@@ -3634,7 +3634,8 @@
                 'VENDIDAS': p.vendidas,
                 'DISPONIBLES': p.disponibles,
                 'BEN. OBTENIDO': p.benObtenido,
-                'MARGEN': p.margen
+                'MARGEN': p.margen,
+                'FOTO': p.photo || ''
             }));
 
             const ws = XLSX.utils.json_to_sheet(data);
