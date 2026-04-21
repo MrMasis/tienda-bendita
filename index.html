@@ -761,11 +761,13 @@
     <div class="container">
         <!-- Header -->
         <header>
-            <div class="brand-title" id="brandTitle">💎 TIENDA BENDITA</div>
-            <div class="brand-subtitle">BISUTERÍA Y MÁS</div>
-            <div class="brand-verse">EFESIOS 3:20</div>
+            <div id="brandTitle" style="text-align: center; padding: 20px 0; cursor: pointer;">
+                <img src="https://drive.google.com/thumbnail?id=1nupxc2gNpxvjo7N8wQDBTXS_-XC_6PFN&sz=w2000" 
+                     alt="TIENDA BENDITA" 
+                     style="max-width: 100%; height: auto; max-height: 200px; object-fit: contain; pointer-events: none;">
+            </div>
             <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
-                <span id="modeBadge" style="background: var(--primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; font-weight: bold;">👁️ Vista Pública</span>
+                <span id="modeBadge" style="background: var(--primary); color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.9em; font-weight: bold;">🛍️ Productos</span>
                 <button id="logoutBtn" onclick="logout()" style="display: none; padding: 8px 16px; border: 2px solid var(--danger); background: white; color: var(--danger); border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9em;">
                     🚪 Cerrar Sesión
                 </button>
@@ -1368,7 +1370,7 @@
                 logoutBtn.style.display = 'inline-block';
             } else {
                 adminElements.forEach(el => el.style.display = 'none');
-                modeBadge.textContent = '👁️ Vista Pública';
+                modeBadge.textContent = '🛍️ Productos';
                 modeBadge.style.background = 'var(--primary)';
                 if (adminBtn) adminBtn.style.display = 'inline-block';
                 logoutBtn.style.display = 'none';
@@ -2736,7 +2738,7 @@
                                 ` : ''}
 
                                 <div class="stock-indicator ${isAvailable ? 'stock-ok' : 'stock-out'}">
-                                    ${isAvailable ? '✅ Disponible' : '❌ No Disponible'} (${p.disponibles}/${p.cantidad})
+                                    ${isAvailable ? `✅ Disponible (${p.disponibles}/${p.cantidad})` : '🔴 AGOTADO'}
                                 </div>
 
                                 <div class="product-details" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0;">
@@ -2812,7 +2814,7 @@
                                 ` : ''}
 
                                 <div class="stock-indicator ${isAvailable ? 'stock-ok' : 'stock-out'}" style="margin-top: 15px;">
-                                    ${isAvailable ? `✅ Disponible (${p.disponibles} unidades)` : '❌ No Disponible'}
+                                    ${isAvailable ? `✅ Disponible (${p.disponibles} unidades)` : '🔴 AGOTADO'}
                                 </div>
                             </div>
                         </div>
