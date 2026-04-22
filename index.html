@@ -932,23 +932,23 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Total Invertido ($) <span class="required">*</span></label>
+                        <label>Total Invertido (€) <span class="required">*</span></label>
                         <input type="number" id="totalInvertido" step="0.01" required onchange="calculateFields()">
                     </div>
 
                     <div class="form-group">
-                        <label>Precio por Unidad ($)</label>
+                        <label>Precio por Unidad (€)</label>
                         <input type="number" id="precioUnidad" step="0.01" readonly style="background: #f7fafc;">
                     </div>
 
                     <div class="form-group">
-                        <label>Precio de Venta ($) <span class="required">*</span></label>
+                        <label>Precio de Venta (€) <span class="required">*</span></label>
                         <input type="number" id="precioVenta" step="0.01" required onchange="calculateFields()">
                     </div>
 
                     <!-- Calculated Fields -->
                     <div class="form-group">
-                        <label>Beneficio Esperado ($)</label>
+                        <label>Beneficio Esperado (€)</label>
                         <input type="number" id="benEsperado" step="0.01" readonly style="background: #f7fafc;">
                     </div>
 
@@ -969,7 +969,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Beneficio Obtenido ($)</label>
+                        <label>Beneficio Obtenido (€)</label>
                         <input type="number" id="benObtenido" step="0.01" readonly style="background: #f7fafc;">
                     </div>
                 </div>
@@ -1073,12 +1073,12 @@
                     <input type="number" id="restockQuantity" required min="1">
                 </div>
                 <div class="form-group">
-                    <label>Inversión Adicional ($) <span class="required">*</span></label>
+                    <label>Inversión Adicional (€) <span class="required">*</span></label>
                     <input type="number" id="restockInvestment" step="0.01" required min="0">
                 </div>
                 <div style="background: var(--light-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                     <p style="color: var(--gray); margin-bottom: 5px;">Nuevo precio por unidad (promedio):</p>
-                    <p style="font-size: 1.3em; font-weight: bold; color: var(--primary);" id="newUnitPrice">$0.00</p>
+                    <p style="font-size: 1.3em; font-weight: bold; color: var(--primary);" id="newUnitPrice">€0.00</p>
                 </div>
                 <button type="submit" class="btn btn-success" style="width: 100%; padding: 15px;">
                     Confirmar Reabastecimiento
@@ -2452,7 +2452,7 @@
                     ${product.photo ? `<img src="${product.photo}" style="max-width: 150px; border-radius: 8px; margin-bottom: 15px;">` : ''}
                     <h3 style="color: var(--dark); margin-bottom: 10px;">${product.producto}</h3>
                     <p style="color: var(--gray);">Disponibles: <strong>${product.disponibles}</strong></p>
-                    <p style="color: var(--gray);">Precio: <strong>$${product.precioVenta.toFixed(2)}</strong></p>
+                    <p style="color: var(--gray);">Precio: <strong>€${product.precioVenta.toFixed(2)}</strong></p>
                 </div>
             `;
             document.getElementById('sellQuantity').max = product.disponibles;
@@ -2502,12 +2502,12 @@
                     ${product.photo ? `<img src="${product.photo}" style="max-width: 150px; border-radius: 8px; margin-bottom: 15px;">` : ''}
                     <h3 style="color: var(--dark); margin-bottom: 10px;">${product.producto}</h3>
                     <p style="color: var(--gray);">Stock actual: <strong>${product.disponibles}</strong></p>
-                    <p style="color: var(--gray);">Precio actual por unidad: <strong>$${product.precioUnidad.toFixed(2)}</strong></p>
+                    <p style="color: var(--gray);">Precio actual por unidad: <strong>€${product.precioUnidad.toFixed(2)}</strong></p>
                 </div>
             `;
             document.getElementById('restockQuantity').value = '';
             document.getElementById('restockInvestment').value = '';
-            document.getElementById('newUnitPrice').textContent = '$0.00';
+            document.getElementById('newUnitPrice').textContent = '€0.00';
             document.getElementById('restockModal').classList.add('active');
         }
 
@@ -2535,7 +2535,7 @@
                             const newTotalQty = product.disponibles + addQty;
                             const newUnitPrice = newTotalInv / newTotalQty;
                             
-                            document.getElementById('newUnitPrice').textContent = '$' + newUnitPrice.toFixed(2);
+                            document.getElementById('newUnitPrice').textContent = '€' + newUnitPrice.toFixed(2);
                         }
                     });
                 });
@@ -2707,11 +2707,11 @@
                                     ` : ''}
                                     <div class="product-detail">
                                         <span>💰 Costo Unit:</span>
-                                        <strong>$${p.precioUnidad.toFixed(2)}</strong>
+                                        <strong>€${p.precioUnidad.toFixed(2)}</strong>
                                     </div>
                                     <div class="product-detail">
                                         <span>💵 Venta:</span>
-                                        <strong>$${p.precioVenta.toFixed(2)}</strong>
+                                        <strong>€${p.precioVenta.toFixed(2)}</strong>
                                     </div>
                                     <div class="product-detail">
                                         <span>📊 Margen:</span>
@@ -2722,7 +2722,7 @@
                                     <div class="product-detail">
                                         <span>📈 Ben. Esp:</span>
                                         <strong class="${p.benEsperado >= 0 ? 'profit-positive' : 'profit-negative'}">
-                                            $${p.benEsperado.toFixed(2)}
+                                            €${p.benEsperado.toFixed(2)}
                                         </strong>
                                     </div>
                                 </div>
@@ -2745,7 +2745,7 @@
                                     </div>
                                     <div class="product-detail">
                                         <span>💸 Ben. Obtenido:</span>
-                                        <strong class="profit-positive">$${p.benObtenido.toFixed(2)}</strong>
+                                        <strong class="profit-positive">€${p.benObtenido.toFixed(2)}</strong>
                                     </div>
                                 </div>
 
@@ -2799,7 +2799,7 @@
                                     ` : ''}
                                     <div class="product-detail full-width" style="font-size: 1.3em; margin-top: 10px;">
                                         <span>💵 Precio:</span>
-                                        <strong style="color: var(--primary);">$${p.precioVenta.toFixed(2)}</strong>
+                                        <strong style="color: var(--primary);">€${p.precioVenta.toFixed(2)}</strong>
                                     </div>
                                 </div>
 
@@ -2855,12 +2855,12 @@
                     <div class="stat-card">
                         <div class="stat-icon">💰</div>
                         <div class="stat-label">Inversión Actual</div>
-                        <div class="stat-value">$${totalInvested.toFixed(2)}</div>
+                        <div class="stat-value">€${totalInvested.toFixed(2)}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">💎</div>
                         <div class="stat-label">Valor Inventario</div>
-                        <div class="stat-value">$${totalValue.toFixed(2)}</div>
+                        <div class="stat-value">€${totalValue.toFixed(2)}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">✅</div>
@@ -2870,12 +2870,12 @@
                     <div class="stat-card">
                         <div class="stat-icon">💸</div>
                         <div class="stat-label">Ganancia Obtenida</div>
-                        <div class="stat-value" style="color: var(--success);">$${totalProfit.toFixed(2)}</div>
+                        <div class="stat-value" style="color: var(--success);">€${totalProfit.toFixed(2)}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📈</div>
                         <div class="stat-label">Ganancia Potencial</div>
-                        <div class="stat-value">$${potentialProfit.toFixed(2)}</div>
+                        <div class="stat-value">€${potentialProfit.toFixed(2)}</div>
                     </div>
                 `;
             } else {
@@ -2940,7 +2940,7 @@
                     ${product.photo ? `<img src="${product.photo}" style="max-width: 150px; border-radius: 8px; margin-bottom: 15px;">` : ''}
                     <h3 style="color: var(--dark); margin-bottom: 10px;">${product.producto}</h3>
                     <p style="color: var(--gray);">Disponibles: <strong>${product.disponibles}</strong></p>
-                    <p style="color: var(--gray);">Precio: <strong>$${product.precioVenta.toFixed(2)}</strong></p>
+                    <p style="color: var(--gray);">Precio: <strong>€${product.precioVenta.toFixed(2)}</strong></p>
                 </div>
             `;
             
@@ -3229,15 +3229,15 @@
                             <div style="display: grid; gap: 20px; font-size: 1.2em;">
                                 <div style="display: flex; justify-content: space-between; padding-bottom: 15px;">
                                     <span>💵 Total Vendido:</span>
-                                    <strong style="font-size: 1.3em;">$${totalVendido.toFixed(2)}</strong>
+                                    <strong style="font-size: 1.3em;">€${totalVendido.toFixed(2)}</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; padding-bottom: 15px; border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px;">
                                     <span>💸 Total Invertido (vendido):</span>
-                                    <strong style="font-size: 1.3em; color: #fed7d7;">-$${totalInvertidoVendido.toFixed(2)}</strong>
+                                    <strong style="font-size: 1.3em; color: #fed7d7;">-€${totalInvertidoVendido.toFixed(2)}</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; padding: 20px 0; border-top: 3px solid white; border-bottom: 3px solid white;">
                                     <span style="font-size: 1.3em; font-weight: bold;">✨ Ganancia Generada:</span>
-                                    <strong style="font-size: 1.5em; color: #c6f6d5;">$${gananciaGenerada.toFixed(2)}</strong>
+                                    <strong style="font-size: 1.5em; color: #c6f6d5;">€${gananciaGenerada.toFixed(2)}</strong>
                                 </div>
                             </div>
                         </div>
@@ -3247,15 +3247,15 @@
                             <div style="display: grid; gap: 20px; font-size: 1.1em;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 10px; border-left: 5px solid var(--warning);">
                                     <span><strong>🙏 Diezmo (10%):</strong></span>
-                                    <span style="font-size: 1.3em; color: var(--warning); font-weight: bold;">-$${diezmo.toFixed(2)}</span>
+                                    <span style="font-size: 1.3em; color: var(--warning); font-weight: bold;">-€${diezmo.toFixed(2)}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 10px; border-left: 5px solid var(--secondary);">
                                     <span><strong>❤️ Donación (5%):</strong></span>
-                                    <span style="font-size: 1.3em; color: var(--secondary); font-weight: bold;">-$${donacion.toFixed(2)}</span>
+                                    <span style="font-size: 1.3em; color: var(--secondary); font-weight: bold;">-€${donacion.toFixed(2)}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-radius: 10px; margin-top: 10px;">
                                     <span style="font-size: 1.3em;"><strong>💼 Total en Caja (85%):</strong></span>
-                                    <span style="font-size: 1.8em; font-weight: bold;">$${totalEnCaja.toFixed(2)}</span>
+                                    <span style="font-size: 1.8em; font-weight: bold;">€${totalEnCaja.toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
@@ -3332,11 +3332,11 @@
                             <div style="text-align: center;">
                                 <div style="margin-bottom: 20px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Ganancia Esperada Total</p>
-                                    <p style="font-size: 2em; font-weight: bold; color: var(--primary);">$${totalExpected.toFixed(2)}</p>
+                                    <p style="font-size: 2em; font-weight: bold; color: var(--primary);">€${totalExpected.toFixed(2)}</p>
                                 </div>
                                 <div style="margin-bottom: 20px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Ganancia Obtenida</p>
-                                    <p style="font-size: 2em; font-weight: bold; color: var(--success);">$${totalObtained.toFixed(2)}</p>
+                                    <p style="font-size: 2em; font-weight: bold; color: var(--success);">€${totalObtained.toFixed(2)}</p>
                                 </div>
                                 <div style="background: var(--light-bg); padding: 15px; border-radius: 10px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Progreso</p>
@@ -3353,11 +3353,11 @@
                             <div style="text-align: center;">
                                 <div style="margin-bottom: 20px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Inversión Total</p>
-                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--warning);">$${totalInversionGeneral.toFixed(2)}</p>
+                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--warning);">€${totalInversionGeneral.toFixed(2)}</p>
                                 </div>
                                 <div style="margin-bottom: 20px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Dinero Total Vendido</p>
-                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--success);">$${dineroTotalVendido.toFixed(2)}</p>
+                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--success);">€${dineroTotalVendido.toFixed(2)}</p>
                                 </div>
                                 <div style="background: ${alcanzado ? 'linear-gradient(135deg, var(--success) 0%, #38a169 100%)' : 'var(--light-bg)'}; padding: 20px; border-radius: 10px; color: ${alcanzado ? 'white' : 'inherit'};">
                                     <p style="margin-bottom: 10px; font-weight: bold;">${alcanzado ? '✅ PUNTO DE EQUILIBRIO ALCANZADO' : 'Progreso'}</p>
