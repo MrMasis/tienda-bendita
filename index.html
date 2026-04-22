@@ -2601,6 +2601,9 @@
             const subcategoryFilter = document.getElementById('subcategoryFilter').value;
 
             let filtered = products.filter(p => {
+                // Public mode: only show products with photos
+                if (!isAdminMode && !p.photo) return false;
+
                 // Search filter
                 if (search && !p.producto.toLowerCase().includes(search) && 
                     !(p.categoria && p.categoria.toLowerCase().includes(search))) return false;
