@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TIENDA BENDITA</title>
+    <title>TIENDA BENDITA - Sistema de Inventario</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>">
     <style>
         * {
@@ -3220,7 +3220,7 @@
             const gananciaGenerada = totalVendido - totalInvertidoVendido;
             const diezmo = gananciaGenerada * 0.10;
             const donacion = gananciaGenerada * 0.05;
-            const totalEnCaja = gananciaGenerada * 0.85;
+            const totalEnCaja = totalVendido - diezmo - donacion;
             
             grid.innerHTML = `
                 <div style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto;">
@@ -3258,7 +3258,7 @@
                                     <span style="font-size: 1.3em; color: var(--secondary); font-weight: bold;">-€${donacion.toFixed(2)}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-radius: 10px; margin-top: 10px;">
-                                    <span style="font-size: 1.3em;"><strong>💼 Total en Caja (85%):</strong></span>
+                                    <span style="font-size: 1.3em;"><strong>💼 Total en Caja:</strong></span>
                                     <span style="font-size: 1.8em; font-weight: bold;">€${totalEnCaja.toFixed(2)}</span>
                                 </div>
                             </div>
