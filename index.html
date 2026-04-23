@@ -2839,8 +2839,8 @@
             
             if (isAdminMode) {
                 // ADMIN - Full statistics
-                const totalInvested = filtered.reduce((sum, p) => sum + ((p.precioUnidad || 0) * (p.disponibles || 0)), 0);
-                const totalValue = filtered.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.disponibles || 0)), 0);
+                const totalInvested = filtered.reduce((sum, p) => sum + (p.totalInvertido || 0), 0);
+                const totalValue = filtered.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.cantidad || 0)), 0);
                 const totalSold = filtered.reduce((sum, p) => sum + (p.vendidas || 0), 0);
                 const totalProfit = filtered.reduce((sum, p) => sum + (p.benObtenido || 0), 0);
                 const potentialProfit = filtered.reduce((sum, p) => sum + (p.benEsperado || 0), 0);
@@ -3081,6 +3081,61 @@
             }
         }
         
+        // Remove individual product from reservation
+        async function removeProductFromReservation(comprador, productIndex) {
+            const reservation = reservations.find(r => r.comprador === comprador);
+            if (!reservation) return;
+            
+            const productName = reservation.productos[productIndex];
+            const quantity = reservation.cantidades[productIndex];
+            
+            if (!confirm(`¿Eliminar "${productName} × ${quantity}" de la reserva de ${comprador}?`)) return;
+            
+            try {
+                showSyncStatus('🔄 Eliminando producto...', 'saving');
+                
+                // Remove from arrays
+                const updatedProductos = [...reservation.productos];
+                const updatedCantidades = [...reservation.cantidades];
+                const updatedProductIds = [...reservation.productIds];
+                
+                updatedProductos.splice(productIndex, 1);
+                updatedCantidades.splice(productIndex, 1);
+                updatedProductIds.splice(productIndex, 1);
+                
+                // If no products left, cancel entire reservation
+                if (updatedProductos.length === 0) {
+                    await cancelReservation(comprador);
+                    return;
+                }
+                
+                // Update reservation in Sheets
+                const params = new URLSearchParams({
+                    action: 'updateReservation',
+                    comprador: comprador,
+                    productos: JSON.stringify(updatedProductos),
+                    cantidades: JSON.stringify(updatedCantidades),
+                    productIds: JSON.stringify(updatedProductIds)
+                });
+                
+                await jsonpRequest(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+                
+                // Reload data
+                await Promise.all([loadReservations(), loadData()]);
+                renderProducts();
+                renderReservationsTab();
+                updateStats();
+                
+                showSyncStatus('✓ Producto eliminado', 'synced');
+                setTimeout(() => showSyncStatus('', 'synced'), 2000);
+            } catch (error) {
+                console.error('Error eliminando producto:', error);
+                showSyncStatus('⚠️ Error', 'error');
+                setTimeout(() => showSyncStatus('', 'synced'), 3000);
+                alert('Error al eliminar el producto. Por favor intenta de nuevo.');
+            }
+        }
+        
         function renderReservationsTab() {
             const grid = document.getElementById('reservationsGrid');
             
@@ -3097,11 +3152,26 @@
             
             grid.innerHTML = reservations.map(res => {
                 const totalProducts = res.productos.length;
-                const productsList = res.productos.map((prod, i) => 
-                    `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">
-                        <strong>${prod}</strong> × ${res.cantidades[i]}
-                    </div>`
-                ).join('');
+                
+                // Calculate total and build products list with prices
+                let reservationTotal = 0;
+                const productsList = res.productos.map((prodName, i) => {
+                    const productId = res.productIds[i];
+                    const product = products.find(p => p.id === productId);
+                    const quantity = res.cantidades[i];
+                    const price = product ? product.precioVenta : 0;
+                    const itemTotal = price * quantity;
+                    reservationTotal += itemTotal;
+                    
+                    return `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <strong>${prodName}</strong> × ${quantity} <span style="color: var(--gray);">(€${itemTotal.toFixed(2)})</span>
+                        </div>
+                        <button onclick="removeProductFromReservation('${res.comprador}', ${i})" 
+                                style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2em; padding: 4px 8px;"
+                                title="Eliminar este producto">✕</button>
+                    </div>`;
+                }).join('');
                 
                 return `
                     <div class="reservation-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -3117,12 +3187,16 @@
                             ${productsList}
                         </div>
                         
+                        <div style="text-align: right; padding: 10px 15px; background: var(--light-bg); border-radius: 8px; margin-bottom: 15px;">
+                            <strong style="font-size: 1.2em; color: var(--dark);">TOTAL: €${reservationTotal.toFixed(2)}</strong>
+                        </div>
+                        
                         <div style="display: flex; gap: 10px;">
                             <button class="btn btn-success" onclick="deliverReservation('${res.comprador}')" style="flex: 1;">
                                 ✓ Entregar Todo
                             </button>
                             <button class="btn btn-danger" onclick="cancelReservation('${res.comprador}')" style="flex: 1;">
-                                ✕ Cancelar
+                                ✕ Cancelar Reserva
                             </button>
                         </div>
                     </div>
