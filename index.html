@@ -2480,7 +2480,7 @@
 
             // Update sales
             product.vendidas = (product.vendidas || 0) + quantity;
-            product.disponibles = product.cantidad - product.vendidas;
+            product.disponibles = product.disponibles - quantity; 
             
             // Recalculate benefit obtained
             product.benObtenido = product.cantidad > 0 ? product.vendidas * product.benEsperado / product.cantidad : 0;
