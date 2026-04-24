@@ -1371,7 +1371,6 @@
 
         // Initialize
         async function init() {
-            updateLoadingProgress(5, '🚀 Iniciando sistema...');
             showSyncStatus('Cargando datos...', 'loading');
             
             await loadData();
@@ -1825,7 +1824,6 @@
             updateCategoriesStructure();
             renderProducts();
             updateStats();
-        }
         }
         
         // JSONP helper function
@@ -3928,6 +3926,11 @@
                 imageObserver.observe(img);
             });
         }
+        
+        // Start loading immediately when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLoadingProgress(5, '🚀 Iniciando sistema...');
+        });
         
         window.addEventListener('load', init);
     </script>
