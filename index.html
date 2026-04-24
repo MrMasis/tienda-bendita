@@ -761,9 +761,9 @@
         <div style="text-align: center; padding: 40px;">
             <!-- Logo -->
             <div style="margin-bottom: 30px; animation: fadeInDown 0.8s ease;">
-                <img src="https://drive.google.com/thumbnail?id=1nupxc2gNpxvjo7N8wQDBTXS_-XC_6PFN&sz=w1000" 
+                <img src="https://drive.google.com/thumbnail?id=1WViEaXD_19l5kdStimRaNtLshlo_RhgD&sz=w600" 
                      alt="TIENDA BENDITA" 
-                     style="max-width: 300px; width: 80%; height: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));">
+                     style="max-width: 350px; width: 80%; height: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));">
             </div>
             
             <!-- Spinner -->
@@ -3929,12 +3929,6 @@
             document.querySelectorAll('.lazy-image').forEach(img => {
                 imageObserver.observe(img);
             });
-        }
-        
-        // Call lazy loading after rendering products
-        function renderProducts() {
-            // ... existing render code ...
-            setTimeout(initLazyLoading, 100);
         }
         
         window.addEventListener('load', init);
