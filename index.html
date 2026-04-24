@@ -833,8 +833,9 @@
         <!-- Header -->
         <header>
             <div id="brandTitle" style="text-align: center; padding: 10px 0; cursor: pointer;">
-                <img src="https://drive.google.com/thumbnail?id=1nupxc2gNpxvjo7N8wQDBTXS_-XC_6PFN&sz=w2000" 
+                <img src="https://drive.google.com/uc?export=view&id=1nupxc2gNpxvjo7N8wQDBTXS_-XC_6PFN" 
                      alt="TIENDA BENDITA" 
+                     referrerpolicy="no-referrer"
                      style="max-width: 95%; width: 100%; height: auto; max-height: 350px; object-fit: contain; pointer-events: none;">
             </div>
             <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
@@ -892,6 +893,10 @@
                     <select id="subcategoryFilter" onchange="applyFilters()">
                         <option value="">Todas las Subcategorías</option>
                     </select>
+                </div>
+                <div class="filter-group" style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <input type="checkbox" id="hasPhotoFilter" onchange="applyFilters()" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="hasPhotoFilter" style="cursor: pointer; font-weight: 500; color: var(--dark); user-select: none;">📸 Solo con foto</label>
                 </div>
             </div>
             <div class="controls-row admin-only" style="margin-top: 15px; display: none;">
@@ -1310,8 +1315,8 @@
             
             // If we found a file ID, return thumbnail format (no ampersand!)
             if (fileId) {
-                // Use thumbnail format which works better with HTML escaping
-                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
+                // Use uc?export=view format which works better across devices
+                return `https://drive.google.com/uc?export=view&id=${fileId}`;
             }
             
             // If we couldn't parse it, return original
@@ -1323,7 +1328,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydJlj8mbYq2Gzva1TQOnCXxUs3AcpVINMtlM9FeLLzMtmjNyBlH-B9RO1AoUw9YaMFNg/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRPJZfGjuxl-toX4caqUJL3x468LIREyDS-jG-lB_-JjIFaP6GVGUax2wyfV28yEWW0Q/exec';
 
         // Initialize
         async function init() {
@@ -2550,7 +2555,7 @@
 
             // Update sales
             product.vendidas = (product.vendidas || 0) + quantity;
-            product.disponibles = product.cantidad - product.vendidas;
+            product.disponibles = product.disponibles - quantity;
             
             // Recalculate benefit obtained
             product.benObtenido = product.cantidad > 0 ? product.vendidas * product.benEsperado / product.cantidad : 0;
@@ -2670,6 +2675,7 @@
             const search = document.getElementById('searchInput').value.toLowerCase();
             const categoryFilter = document.getElementById('categoryFilter').value;
             const subcategoryFilter = document.getElementById('subcategoryFilter').value;
+            const hasPhotoFilter = document.getElementById('hasPhotoFilter').checked;
 
             let filtered = products.filter(p => {
                 // Search filter
@@ -2681,6 +2687,9 @@
                 
                 // Subcategory filter
                 if (subcategoryFilter && p.subcategoria !== subcategoryFilter) return false;
+
+                // Photo filter - only show products with photos
+                if (hasPhotoFilter && !p.photo) return false;
 
                 return true;
             });
@@ -2753,7 +2762,7 @@
                         <div class="product-card">
                             
                             <div class="product-image">
-                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
+                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.parentElement.innerHTML='<span class=\\'no-photo-icon\\'>💎</span><button class=\\'add-photo-btn\\' onclick=\\'event.stopPropagation(); editProduct(${p.id})\\'>📷 Agregar Foto</button>';" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
                                 ${!p.photo ? `<button class="add-photo-btn" onclick="event.stopPropagation(); editProduct(${p.id})">📷 Agregar Foto</button>` : ''}
                             </div>
 
@@ -2843,13 +2852,27 @@
                 }).join('');
             } else {
                 // PUBLIC VIEW - Limited information (catalog)
-                grid.innerHTML = filtered.map(p => {
+                // Filter out products without photos in public mode
+                const filteredWithPhotos = filtered.filter(p => p.photo);
+                
+                if (filteredWithPhotos.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1 / -1;">
+                            <div class="empty-state-icon">📦</div>
+                            <h3>No hay productos disponibles</h3>
+                            <p>Próximamente agregaremos más productos</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                grid.innerHTML = filteredWithPhotos.map(p => {
                     const isAvailable = p.disponibles > 0;
 
                     return `
                         <div class="product-card">
                             <div class="product-image">
-                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
+                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.parentElement.innerHTML='<span class=\\'no-photo-icon\\'>💎</span>';" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
                             </div>
 
                             <div class="product-info">
@@ -2906,8 +2929,8 @@
             
             if (isAdminMode) {
                 // ADMIN - Full statistics
-                const totalInvested = filtered.reduce((sum, p) => sum + ((p.precioUnidad || 0) * (p.disponibles || 0)), 0);
-                const totalValue = filtered.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.disponibles || 0)), 0);
+                const totalInvested = filtered.reduce((sum, p) => sum + (p.totalInvertido || 0), 0);
+                const totalValue = filtered.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.cantidad || 0)), 0);
                 const totalSold = filtered.reduce((sum, p) => sum + (p.vendidas || 0), 0);
                 const totalProfit = filtered.reduce((sum, p) => sum + (p.benObtenido || 0), 0);
                 const potentialProfit = filtered.reduce((sum, p) => sum + (p.benEsperado || 0), 0);
@@ -3045,12 +3068,13 @@
             try {
                 showSyncStatus('💾 Guardando reserva...', 'saving');
                 
-                // Add to reservations with simple parameters
+                // Add to reservations with simple parameters including price
                 const url = `${GOOGLE_SCRIPT_URL}?action=addReservation` +
                     `&comprador=${encodeURIComponent(comprador)}` +
                     `&producto=${encodeURIComponent(product.producto)}` +
                     `&cantidad=${cantidad}` +
-                    `&productId=${product.id}`;
+                    `&productId=${product.id}` +
+                    `&precio=${product.precioVenta}`;
                 
                 await jsonpRequest(url);
                 
@@ -3164,11 +3188,25 @@
             
             grid.innerHTML = reservations.map(res => {
                 const totalProducts = res.productos.length;
-                const productsList = res.productos.map((prod, i) => 
-                    `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">
-                        <strong>${prod}</strong> × ${res.cantidades[i]}
-                    </div>`
-                ).join('');
+                
+                // Calculate total cost
+                let totalCost = 0;
+                const productsList = res.productos.map((prod, i) => {
+                    const precio = parseFloat(res.precios ? res.precios[i] : 0) || 0;
+                    const cantidad = parseInt(res.cantidades[i]) || 0;
+                    const subtotal = precio * cantidad;
+                    totalCost += subtotal;
+                    
+                    return `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${prod}</strong> × ${cantidad}
+                            <div style="color: var(--gray); font-size: 0.85em;">$${precio.toFixed(2)} c/u</div>
+                        </div>
+                        <div style="font-weight: bold; color: var(--primary);">
+                            $${subtotal.toFixed(2)}
+                        </div>
+                    </div>`;
+                }).join('');
                 
                 return `
                     <div class="reservation-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -3182,6 +3220,13 @@
                         
                         <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                             ${productsList}
+                        </div>
+                        
+                        <div style="padding: 12px; background: var(--light-bg); border-radius: 8px; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="color: var(--dark); font-size: 1.1em;">Total:</strong>
+                                <strong style="color: var(--primary); font-size: 1.3em;">$${totalCost.toFixed(2)}</strong>
+                            </div>
                         </div>
                         
                         <div style="display: flex; gap: 10px;">
@@ -3285,9 +3330,9 @@
             });
             
             const gananciaGenerada = totalVendido - totalInvertidoVendido;
-            const diezmo = gananciaGenerada * 0.10;
-            const donacion = gananciaGenerada * 0.05;
-            const totalEnCaja = gananciaGenerada * 0.85;
+            const diezmo = totalVendido * 0.10;
+            const donacion = totalVendido * 0.05;
+            const totalEnCaja = totalVendido - diezmo - donacion;
             
             grid.innerHTML = `
                 <div style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto;">
