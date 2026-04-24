@@ -756,6 +756,66 @@
     </style>
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #CE9488 0%, #B08C56 100%); display: flex; align-items: center; justify-content: center; z-index: 99999; transition: opacity 0.5s ease;">
+        <div style="text-align: center; padding: 40px;">
+            <!-- Logo -->
+            <div style="margin-bottom: 30px; animation: fadeInDown 0.8s ease;">
+                <img src="https://drive.google.com/thumbnail?id=1nupxc2gNpxvjo7N8wQDBTXS_-XC_6PFN&sz=w1000" 
+                     alt="TIENDA BENDITA" 
+                     style="max-width: 300px; width: 80%; height: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));">
+            </div>
+            
+            <!-- Spinner -->
+            <div style="margin: 30px 0; animation: fadeIn 1s ease;">
+                <div class="loading-spinner"></div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div style="width: 300px; max-width: 80vw; margin: 0 auto 20px; background: rgba(255,255,255,0.3); border-radius: 20px; height: 8px; overflow: hidden; animation: fadeIn 1.2s ease;">
+                <div id="loadingProgress" style="height: 100%; background: linear-gradient(90deg, #fff 0%, #F5EDE4 100%); width: 0%; transition: width 0.3s ease; border-radius: 20px;"></div>
+            </div>
+            
+            <!-- Loading Text -->
+            <div id="loadingText" style="color: white; font-size: 1.1em; font-weight: 500; margin-top: 15px; animation: fadeIn 1.5s ease;">
+                📦 Iniciando...
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInDown {
+            from { 
+                opacity: 0; 
+                transform: translateY(-20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+    </style>
+
     <!-- Sync Indicator -->
     <div id="syncIndicator" class="sync-indicator sync-loading">Cargando...</div>
 
@@ -1254,15 +1314,76 @@
 
         // Google Sheets API Configuration
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydJlj8mbYq2Gzva1TQOnCXxUs3AcpVINMtlM9FeLLzMtmjNyBlH-B9RO1AoUw9YaMFNg/exec';
+        
+        // Loading progress helpers
+        function updateLoadingProgress(percent, text) {
+            const progressBar = document.getElementById('loadingProgress');
+            const loadingText = document.getElementById('loadingText');
+            if (progressBar) progressBar.style.width = percent + '%';
+            if (loadingText) loadingText.textContent = text;
+        }
+        
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 500);
+            }
+        }
+        
+        // Cache system
+        const CACHE_VERSION = '1.0';
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+        
+        function getCachedData(key) {
+            try {
+                const cached = localStorage.getItem(key);
+                if (!cached) return null;
+                
+                const data = JSON.parse(cached);
+                const now = Date.now();
+                
+                if (data.version !== CACHE_VERSION || now - data.timestamp > CACHE_DURATION) {
+                    localStorage.removeItem(key);
+                    return null;
+                }
+                
+                return data.value;
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        function setCachedData(key, value) {
+            try {
+                const data = {
+                    version: CACHE_VERSION,
+                    timestamp: Date.now(),
+                    value: value
+                };
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.warn('Cache storage failed:', e);
+            }
+        }
 
         // Initialize
         async function init() {
+            updateLoadingProgress(5, '🚀 Iniciando sistema...');
             showSyncStatus('Cargando datos...', 'loading');
+            
             await loadData();
-            await loadReservations(); // Load reservations on startup
+            updateLoadingProgress(95, '📋 Cargando reservas...');
+            
+            await loadReservations();
             updateCategoriesStructure();
             updateCategoryFilter();
             updateCategorySelects();
+            
+            updateLoadingProgress(100, '✅ ¡Listo!');
+            setTimeout(() => hideLoadingScreen(), 300);
             
             // Always start in public mode
             isAdminMode = false;
@@ -1602,68 +1723,97 @@
         // Load data from Google Sheets using JSONP
         async function loadData() {
             try {
+                updateLoadingProgress(10, '📦 Verificando caché...');
+                
+                // Try cache first
+                const cachedProducts = getCachedData('products');
+                const cachedCategories = getCachedData('categories');
+                
+                if (cachedProducts) {
+                    products = cachedProducts;
+                    console.log(`⚡ Cargados ${products.length} productos desde caché`);
+                    updateLoadingProgress(40, '✅ Productos cargados');
+                    
+                    if (cachedCategories) {
+                        categoriesStructure = cachedCategories;
+                        console.log(`⚡ Cargadas ${Object.keys(categoriesStructure).length} categorías desde caché`);
+                        updateLoadingProgress(60, '✅ Categorías cargadas');
+                    }
+                    
+                    // Still try to refresh in background
+                    refreshDataInBackground();
+                    return;
+                }
+                
+                // Load from Sheets
                 showSyncStatus('Cargando datos...', 'loading');
-                console.log('📥 Intentando cargar desde Google Sheets...');
+                console.log('📥 Cargando desde Google Sheets...');
+                updateLoadingProgress(20, '📥 Conectando con servidor...');
                 
                 try {
                     // Load products
-                    const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getProducts`);
+                    const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getProducts`, 15000);
                     console.log('📦 Datos recibidos:', data);
+                    updateLoadingProgress(40, '📦 Procesando productos...');
                     
                     if (data.products && Array.isArray(data.products)) {
                         products = data.products.map(p => {
-                            // Clean photo URL if it exists (remove markdown formatting)
+                            // Clean photo URL if it exists
                             if (p.photo && typeof p.photo === 'string') {
-                                const originalPhoto = p.photo;
                                 p.photo = p.photo.trim()
                                     .replace(/^__/, '').replace(/__$/, '')
                                     .replace(/^\*\*/, '').replace(/\*\*$/, '')
                                     .replace(/^_/, '').replace(/_$/, '')
                                     .replace(/^\*/, '').replace(/\*$/, '')
                                     .trim();
-                                
-                                // Debug: Log if photo was cleaned
-                                if (originalPhoto !== p.photo) {
-                                    console.log(`🧹 Foto limpiada para ${p.producto}:`, originalPhoto, '→', p.photo);
-                                }
                             }
                             return p;
                         });
                         
-                        // Debug: Count products with photos
                         const photosCount = products.filter(p => p.photo).length;
                         console.log(`📸 ${photosCount} productos tienen foto`);
                         
+                        // Cache products
+                        setCachedData('products', products);
                         localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
                         console.log(`✅ Cargados ${products.length} productos desde Sheets`);
+                        updateLoadingProgress(60, '✅ Productos guardados');
                     } else {
                         throw new Error('No hay productos en la respuesta');
                     }
                     
                     // Load categories
+                    updateLoadingProgress(70, '📂 Cargando categorías...');
                     try {
-                        const categoriesData = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getCategories`);
+                        const categoriesData = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getCategories`, 10000);
                         if (categoriesData.categories) {
                             categoriesStructure = categoriesData.categories;
+                            setCachedData('categories', categoriesStructure);
                             localStorage.setItem('tienda_bendita_categories', JSON.stringify(categoriesStructure));
-                            console.log(`✅ Cargadas ${Object.keys(categoriesStructure).length} categorías desde Sheets`);
+                            console.log(`✅ Cargadas ${Object.keys(categoriesStructure).length} categorías`);
+                            updateLoadingProgress(90, '✅ Categorías cargadas');
                         }
                     } catch (catError) {
                         console.warn('⚠️ No se pudieron cargar categorías:', catError.message);
+                        updateLoadingProgress(90, '⚠️ Sin categorías');
                     }
                     
                     showSyncStatus('', 'synced');
                 } catch (sheetsError) {
                     console.warn('⚠️ No se pudo cargar desde Sheets:', sheetsError.message);
-                    console.log('📱 Intentando cargar desde localStorage...');
+                    updateLoadingProgress(50, '📱 Cargando respaldo local...');
                     
                     const localData = localStorage.getItem('tienda_bendita_inventory');
                     if (localData) {
                         products = JSON.parse(localData);
                         console.log(`✅ Cargados ${products.length} productos desde localStorage`);
                         showSyncStatus('📱 Modo local', 'synced');
+                        updateLoadingProgress(90, '✅ Modo local activo');
                     } else {
-                        console.log('📭 No hay datos locales, iniciando vacío');
+                        console.log('📭 No hay datos locales');
+                        updateLoadingProgress(90, '📭 Sin datos');
+                    }
+                }
                         products = [];
                         showSyncStatus('', 'synced');
                     }
@@ -1681,13 +1831,13 @@
         }
         
         // JSONP helper function
-        function jsonpRequest(url) {
+        function jsonpRequest(url, timeoutMs = 15000) {
             return new Promise((resolve, reject) => {
                 const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
                 const timeout = setTimeout(() => {
                     cleanup();
                     reject(new Error('JSONP request timeout'));
-                }, 30000); // 30 second timeout
+                }, timeoutMs);
                 
                 window[callbackName] = function(data) {
                     cleanup();
@@ -1715,6 +1865,34 @@
                 
                 document.body.appendChild(script);
             });
+        }
+        
+        // Refresh data in background (silent update)
+        async function refreshDataInBackground() {
+            try {
+                console.log('🔄 Actualizando datos en segundo plano...');
+                const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getProducts`, 20000);
+                
+                if (data.products && Array.isArray(data.products)) {
+                    const newProducts = data.products.map(p => {
+                        if (p.photo && typeof p.photo === 'string') {
+                            p.photo = p.photo.trim()
+                                .replace(/^__/, '').replace(/__$/, '')
+                                .replace(/^\*\*/, '').replace(/\*\*$/, '')
+                                .replace(/^_/, '').replace(/_$/, '')
+                                .replace(/^\*/, '').replace(/\*$/, '')
+                                .trim();
+                        }
+                        return p;
+                    });
+                    
+                    setCachedData('products', newProducts);
+                    localStorage.setItem('tienda_bendita_inventory', JSON.stringify(newProducts));
+                    console.log('✅ Datos actualizados en segundo plano');
+                }
+            } catch (e) {
+                console.log('ℹ️ No se pudo actualizar en segundo plano (usando caché)');
+            }
         }
 
         // Save data to Google Sheets using hidden form POST
@@ -2686,7 +2864,7 @@
                         <div class="product-card">
                             
                             <div class="product-image">
-                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
+                                ${p.photo ? `<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f0f0f0'/%3E%3C/svg%3E" data-src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo lazy-image" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
                                 ${!p.photo ? `<button class="add-photo-btn" onclick="event.stopPropagation(); editProduct(${p.id})">📷 Agregar Foto</button>` : ''}
                             </div>
 
@@ -2782,7 +2960,7 @@
                     return `
                         <div class="product-card">
                             <div class="product-image">
-                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
+                                ${p.photo ? `<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f0f0f0'/%3E%3C/svg%3E" data-src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo lazy-image" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
                             </div>
 
                             <div class="product-info">
@@ -2822,6 +3000,9 @@
                     `;
                 }).join('');
             }
+            
+            // Initialize lazy loading for images
+            setTimeout(() => initLazyLoading(), 50);
         }
 
         // Update Stats
@@ -3727,6 +3908,35 @@
         }
 
         // Initialize on load
+        // Lazy loading images with Intersection Observer
+        function initLazyLoading() {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        const src = img.getAttribute('data-src');
+                        if (src) {
+                            img.src = src;
+                            img.classList.remove('lazy-image');
+                            observer.unobserve(img);
+                        }
+                    }
+                });
+            }, {
+                rootMargin: '50px' // Start loading 50px before image enters viewport
+            });
+            
+            document.querySelectorAll('.lazy-image').forEach(img => {
+                imageObserver.observe(img);
+            });
+        }
+        
+        // Call lazy loading after rendering products
+        function renderProducts() {
+            // ... existing render code ...
+            setTimeout(initLazyLoading, 100);
+        }
+        
         window.addEventListener('load', init);
     </script>
 
