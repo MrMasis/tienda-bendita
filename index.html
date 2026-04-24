@@ -1374,9 +1374,13 @@
             showSyncStatus('Cargando datos...', 'loading');
             
             await loadData();
-            updateLoadingProgress(95, '📋 Cargando reservas...');
             
-            await loadReservations();
+            // Load reservations in background (don't block)
+            loadReservations().catch(err => {
+                console.warn('Reservas no disponibles:', err.message);
+            });
+            
+            updateLoadingProgress(95, '🎨 Preparando interfaz...');
             updateCategoriesStructure();
             updateCategoryFilter();
             updateCategorySelects();
