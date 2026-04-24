@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TIENDA BENDITA</title>
+    <title>TIENDA BENDITA - Sistema de Inventario</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>">
     <style>
         * {
@@ -2480,7 +2480,7 @@
 
             // Update sales
             product.vendidas = (product.vendidas || 0) + quantity;
-            product.disponibles = product.disponibles - quantity; 
+            product.disponibles = product.cantidad - product.vendidas;
             
             // Recalculate benefit obtained
             product.benObtenido = product.cantidad > 0 ? product.vendidas * product.benEsperado / product.cantidad : 0;
@@ -3014,35 +3014,11 @@
             try {
                 showSyncStatus('📦 Procesando entrega...', 'saving');
                 
-                // Get reservation data BEFORE deleting
-                const reservation = reservations.find(r => r.comprador === comprador);
-                if (!reservation) {
-                    alert('Reserva no encontrada');
-                    return;
-                }
-                
-                // Update products: add to vendidas
-                for (let i = 0; i < reservation.productIds.length; i++) {
-                    const productId = reservation.productIds[i];
-                    const cantidad = reservation.cantidades[i];
-                    const product = products.find(p => p.id === productId);
-                    
-                    if (product) {
-                        product.vendidas = (product.vendidas || 0) + cantidad;
-                        product.benObtenido = product.precioVenta 
-                            ? (product.vendidas * (product.precioVenta - product.precioUnidad))
-                            : 0;
-                        
-                        // Save each product
-                        await saveSingleProduct(product);
-                    }
-                }
-                
-                // Delete reservation from Sheets
+                // Call Apps Script to handle everything (mark as sold, delete reservation)
                 await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=deliverReservation&comprador=${encodeURIComponent(comprador)}`);
                 
                 // Reload data
-                await loadReservations();
+                await Promise.all([loadReservations(), loadData()]);
                 renderReservationsTab();
                 renderProducts();
                 updateStats();
