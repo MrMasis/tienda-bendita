@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TIENDA BENDITA - Sistema de Inventario</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>">
     <style>
         * {
             margin: 0;
@@ -756,66 +755,6 @@
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingScreen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #CE9488 0%, #B08C56 100%); display: flex; align-items: center; justify-content: center; z-index: 99999; transition: opacity 0.5s ease;">
-        <div style="text-align: center; padding: 40px;">
-            <!-- Logo -->
-            <div style="margin-bottom: 30px; animation: fadeInDown 0.8s ease;">
-                <img src="https://drive.google.com/thumbnail?id=1WViEaXD_19l5kdStimRaNtLshlo_RhgD&sz=w600" 
-                     alt="TIENDA BENDITA" 
-                     style="max-width: 350px; width: 80%; height: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));">
-            </div>
-            
-            <!-- Spinner -->
-            <div style="margin: 30px 0; animation: fadeIn 1s ease;">
-                <div class="loading-spinner"></div>
-            </div>
-            
-            <!-- Progress Bar -->
-            <div style="width: 300px; max-width: 80vw; margin: 0 auto 20px; background: rgba(255,255,255,0.3); border-radius: 20px; height: 8px; overflow: hidden; animation: fadeIn 1.2s ease;">
-                <div id="loadingProgress" style="height: 100%; background: linear-gradient(90deg, #fff 0%, #F5EDE4 100%); width: 0%; transition: width 0.3s ease; border-radius: 20px;"></div>
-            </div>
-            
-            <!-- Loading Text -->
-            <div id="loadingText" style="color: white; font-size: 1.1em; font-weight: 500; margin-top: 15px; animation: fadeIn 1.5s ease;">
-                📦 Iniciando...
-            </div>
-        </div>
-    </div>
-
-    <style>
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes fadeInDown {
-            from { 
-                opacity: 0; 
-                transform: translateY(-20px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
-        }
-    </style>
-
     <!-- Sync Indicator -->
     <div id="syncIndicator" class="sync-indicator sync-loading">Cargando...</div>
 
@@ -993,23 +932,23 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Total Invertido (€) <span class="required">*</span></label>
+                        <label>Total Invertido ($) <span class="required">*</span></label>
                         <input type="number" id="totalInvertido" step="0.01" required onchange="calculateFields()">
                     </div>
 
                     <div class="form-group">
-                        <label>Precio por Unidad (€)</label>
+                        <label>Precio por Unidad ($)</label>
                         <input type="number" id="precioUnidad" step="0.01" readonly style="background: #f7fafc;">
                     </div>
 
                     <div class="form-group">
-                        <label>Precio de Venta (€) <span class="required">*</span></label>
+                        <label>Precio de Venta ($) <span class="required">*</span></label>
                         <input type="number" id="precioVenta" step="0.01" required onchange="calculateFields()">
                     </div>
 
                     <!-- Calculated Fields -->
                     <div class="form-group">
-                        <label>Beneficio Esperado (€)</label>
+                        <label>Beneficio Esperado ($)</label>
                         <input type="number" id="benEsperado" step="0.01" readonly style="background: #f7fafc;">
                     </div>
 
@@ -1030,7 +969,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Beneficio Obtenido (€)</label>
+                        <label>Beneficio Obtenido ($)</label>
                         <input type="number" id="benObtenido" step="0.01" readonly style="background: #f7fafc;">
                     </div>
                 </div>
@@ -1134,12 +1073,12 @@
                     <input type="number" id="restockQuantity" required min="1">
                 </div>
                 <div class="form-group">
-                    <label>Inversión Adicional (€) <span class="required">*</span></label>
+                    <label>Inversión Adicional ($) <span class="required">*</span></label>
                     <input type="number" id="restockInvestment" step="0.01" required min="0">
                 </div>
                 <div style="background: var(--light-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                     <p style="color: var(--gray); margin-bottom: 5px;">Nuevo precio por unidad (promedio):</p>
-                    <p style="font-size: 1.3em; font-weight: bold; color: var(--primary);" id="newUnitPrice">€0.00</p>
+                    <p style="font-size: 1.3em; font-weight: bold; color: var(--primary);" id="newUnitPrice">$0.00</p>
                 </div>
                 <button type="submit" class="btn btn-success" style="width: 100%; padding: 15px;">
                     Confirmar Reabastecimiento
@@ -1314,79 +1253,15 @@
 
         // Google Sheets API Configuration
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydJlj8mbYq2Gzva1TQOnCXxUs3AcpVINMtlM9FeLLzMtmjNyBlH-B9RO1AoUw9YaMFNg/exec';
-        
-        // Loading progress helpers
-        function updateLoadingProgress(percent, text) {
-            const progressBar = document.getElementById('loadingProgress');
-            const loadingText = document.getElementById('loadingText');
-            if (progressBar) progressBar.style.width = percent + '%';
-            if (loadingText) loadingText.textContent = text;
-        }
-        
-        function hideLoadingScreen() {
-            const loadingScreen = document.getElementById('loadingScreen');
-            if (loadingScreen) {
-                loadingScreen.style.opacity = '0';
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                }, 500);
-            }
-        }
-        
-        // Cache system
-        const CACHE_VERSION = '1.0';
-        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-        
-        function getCachedData(key) {
-            try {
-                const cached = localStorage.getItem(key);
-                if (!cached) return null;
-                
-                const data = JSON.parse(cached);
-                const now = Date.now();
-                
-                if (data.version !== CACHE_VERSION || now - data.timestamp > CACHE_DURATION) {
-                    localStorage.removeItem(key);
-                    return null;
-                }
-                
-                return data.value;
-            } catch (e) {
-                return null;
-            }
-        }
-        
-        function setCachedData(key, value) {
-            try {
-                const data = {
-                    version: CACHE_VERSION,
-                    timestamp: Date.now(),
-                    value: value
-                };
-                localStorage.setItem(key, JSON.stringify(data));
-            } catch (e) {
-                console.warn('Cache storage failed:', e);
-            }
-        }
 
         // Initialize
         async function init() {
             showSyncStatus('Cargando datos...', 'loading');
-            
             await loadData();
-            
-            // Load reservations in background (don't block)
-            loadReservations().catch(err => {
-                console.warn('Reservas no disponibles:', err.message);
-            });
-            
-            updateLoadingProgress(95, '🎨 Preparando interfaz...');
+            await loadReservations(); // Load reservations on startup
             updateCategoriesStructure();
             updateCategoryFilter();
             updateCategorySelects();
-            
-            updateLoadingProgress(100, '✅ ¡Listo!');
-            setTimeout(() => hideLoadingScreen(), 300);
             
             // Always start in public mode
             isAdminMode = false;
@@ -1726,96 +1601,70 @@
         // Load data from Google Sheets using JSONP
         async function loadData() {
             try {
-                updateLoadingProgress(10, '📦 Verificando caché...');
-                
-                // Try cache first
-                const cachedProducts = getCachedData('products');
-                const cachedCategories = getCachedData('categories');
-                
-                if (cachedProducts) {
-                    products = cachedProducts;
-                    console.log(`⚡ Cargados ${products.length} productos desde caché`);
-                    updateLoadingProgress(40, '✅ Productos cargados');
-                    
-                    if (cachedCategories) {
-                        categoriesStructure = cachedCategories;
-                        console.log(`⚡ Cargadas ${Object.keys(categoriesStructure).length} categorías desde caché`);
-                        updateLoadingProgress(60, '✅ Categorías cargadas');
-                    }
-                    
-                    // Still try to refresh in background
-                    refreshDataInBackground();
-                    return;
-                }
-                
-                // Load from Sheets
                 showSyncStatus('Cargando datos...', 'loading');
-                console.log('📥 Cargando desde Google Sheets...');
-                updateLoadingProgress(20, '📥 Conectando con servidor...');
+                console.log('📥 Intentando cargar desde Google Sheets...');
                 
                 try {
                     // Load products
-                    const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getProducts`, 15000);
+                    const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getProducts`);
                     console.log('📦 Datos recibidos:', data);
-                    updateLoadingProgress(40, '📦 Procesando productos...');
                     
                     if (data.products && Array.isArray(data.products)) {
                         products = data.products.map(p => {
-                            // Clean photo URL if it exists
+                            // Clean photo URL if it exists (remove markdown formatting)
                             if (p.photo && typeof p.photo === 'string') {
+                                const originalPhoto = p.photo;
                                 p.photo = p.photo.trim()
                                     .replace(/^__/, '').replace(/__$/, '')
                                     .replace(/^\*\*/, '').replace(/\*\*$/, '')
                                     .replace(/^_/, '').replace(/_$/, '')
                                     .replace(/^\*/, '').replace(/\*$/, '')
                                     .trim();
+                                
+                                // Debug: Log if photo was cleaned
+                                if (originalPhoto !== p.photo) {
+                                    console.log(`🧹 Foto limpiada para ${p.producto}:`, originalPhoto, '→', p.photo);
+                                }
                             }
                             return p;
                         });
                         
+                        // Debug: Count products with photos
                         const photosCount = products.filter(p => p.photo).length;
                         console.log(`📸 ${photosCount} productos tienen foto`);
                         
-                        // Cache products
-                        setCachedData('products', products);
                         localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
                         console.log(`✅ Cargados ${products.length} productos desde Sheets`);
-                        updateLoadingProgress(60, '✅ Productos guardados');
                     } else {
                         throw new Error('No hay productos en la respuesta');
                     }
                     
                     // Load categories
-                    updateLoadingProgress(70, '📂 Cargando categorías...');
                     try {
-                        const categoriesData = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getCategories`, 10000);
+                        const categoriesData = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getCategories`);
                         if (categoriesData.categories) {
                             categoriesStructure = categoriesData.categories;
-                            setCachedData('categories', categoriesStructure);
                             localStorage.setItem('tienda_bendita_categories', JSON.stringify(categoriesStructure));
-                            console.log(`✅ Cargadas ${Object.keys(categoriesStructure).length} categorías`);
-                            updateLoadingProgress(90, '✅ Categorías cargadas');
+                            console.log(`✅ Cargadas ${Object.keys(categoriesStructure).length} categorías desde Sheets`);
                         }
                     } catch (catError) {
                         console.warn('⚠️ No se pudieron cargar categorías:', catError.message);
-                        updateLoadingProgress(90, '⚠️ Sin categorías');
                     }
                     
                     showSyncStatus('', 'synced');
                 } catch (sheetsError) {
                     console.warn('⚠️ No se pudo cargar desde Sheets:', sheetsError.message);
-                    updateLoadingProgress(50, '📱 Cargando respaldo local...');
+                    console.log('📱 Intentando cargar desde localStorage...');
                     
                     const localData = localStorage.getItem('tienda_bendita_inventory');
                     if (localData) {
                         products = JSON.parse(localData);
                         console.log(`✅ Cargados ${products.length} productos desde localStorage`);
                         showSyncStatus('📱 Modo local', 'synced');
-                        updateLoadingProgress(90, '✅ Modo local activo');
                     } else {
-                        console.log('📭 No hay datos locales');
-                        updateLoadingProgress(90, '📭 Sin datos');
+                        console.log('📭 No hay datos locales, iniciando vacío');
                         products = [];
+                        showSyncStatus('', 'synced');
                     }
                 }
                 
@@ -1831,13 +1680,13 @@
         }
         
         // JSONP helper function
-        function jsonpRequest(url, timeoutMs = 15000) {
+        function jsonpRequest(url) {
             return new Promise((resolve, reject) => {
                 const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
                 const timeout = setTimeout(() => {
                     cleanup();
                     reject(new Error('JSONP request timeout'));
-                }, timeoutMs);
+                }, 30000); // 30 second timeout
                 
                 window[callbackName] = function(data) {
                     cleanup();
@@ -1865,34 +1714,6 @@
                 
                 document.body.appendChild(script);
             });
-        }
-        
-        // Refresh data in background (silent update)
-        async function refreshDataInBackground() {
-            try {
-                console.log('🔄 Actualizando datos en segundo plano...');
-                const data = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getProducts`, 20000);
-                
-                if (data.products && Array.isArray(data.products)) {
-                    const newProducts = data.products.map(p => {
-                        if (p.photo && typeof p.photo === 'string') {
-                            p.photo = p.photo.trim()
-                                .replace(/^__/, '').replace(/__$/, '')
-                                .replace(/^\*\*/, '').replace(/\*\*$/, '')
-                                .replace(/^_/, '').replace(/_$/, '')
-                                .replace(/^\*/, '').replace(/\*$/, '')
-                                .trim();
-                        }
-                        return p;
-                    });
-                    
-                    setCachedData('products', newProducts);
-                    localStorage.setItem('tienda_bendita_inventory', JSON.stringify(newProducts));
-                    console.log('✅ Datos actualizados en segundo plano');
-                }
-            } catch (e) {
-                console.log('ℹ️ No se pudo actualizar en segundo plano (usando caché)');
-            }
         }
 
         // Save data to Google Sheets using hidden form POST
@@ -2631,7 +2452,7 @@
                     ${product.photo ? `<img src="${product.photo}" style="max-width: 150px; border-radius: 8px; margin-bottom: 15px;">` : ''}
                     <h3 style="color: var(--dark); margin-bottom: 10px;">${product.producto}</h3>
                     <p style="color: var(--gray);">Disponibles: <strong>${product.disponibles}</strong></p>
-                    <p style="color: var(--gray);">Precio: <strong>€${product.precioVenta.toFixed(2)}</strong></p>
+                    <p style="color: var(--gray);">Precio: <strong>$${product.precioVenta.toFixed(2)}</strong></p>
                 </div>
             `;
             document.getElementById('sellQuantity').max = product.disponibles;
@@ -2681,12 +2502,12 @@
                     ${product.photo ? `<img src="${product.photo}" style="max-width: 150px; border-radius: 8px; margin-bottom: 15px;">` : ''}
                     <h3 style="color: var(--dark); margin-bottom: 10px;">${product.producto}</h3>
                     <p style="color: var(--gray);">Stock actual: <strong>${product.disponibles}</strong></p>
-                    <p style="color: var(--gray);">Precio actual por unidad: <strong>€${product.precioUnidad.toFixed(2)}</strong></p>
+                    <p style="color: var(--gray);">Precio actual por unidad: <strong>$${product.precioUnidad.toFixed(2)}</strong></p>
                 </div>
             `;
             document.getElementById('restockQuantity').value = '';
             document.getElementById('restockInvestment').value = '';
-            document.getElementById('newUnitPrice').textContent = '€0.00';
+            document.getElementById('newUnitPrice').textContent = '$0.00';
             document.getElementById('restockModal').classList.add('active');
         }
 
@@ -2714,7 +2535,7 @@
                             const newTotalQty = product.disponibles + addQty;
                             const newUnitPrice = newTotalInv / newTotalQty;
                             
-                            document.getElementById('newUnitPrice').textContent = '€' + newUnitPrice.toFixed(2);
+                            document.getElementById('newUnitPrice').textContent = '$' + newUnitPrice.toFixed(2);
                         }
                     });
                 });
@@ -2780,9 +2601,6 @@
             const subcategoryFilter = document.getElementById('subcategoryFilter').value;
 
             let filtered = products.filter(p => {
-                // Public mode: only show products with photos
-                if (!isAdminMode && !p.photo) return false;
-
                 // Search filter
                 if (search && !p.producto.toLowerCase().includes(search) && 
                     !(p.categoria && p.categoria.toLowerCase().includes(search))) return false;
@@ -2864,7 +2682,7 @@
                         <div class="product-card">
                             
                             <div class="product-image">
-                                ${p.photo ? `<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f0f0f0'/%3E%3C/svg%3E" data-src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo lazy-image" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
+                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
                                 ${!p.photo ? `<button class="add-photo-btn" onclick="event.stopPropagation(); editProduct(${p.id})">📷 Agregar Foto</button>` : ''}
                             </div>
 
@@ -2889,11 +2707,11 @@
                                     ` : ''}
                                     <div class="product-detail">
                                         <span>💰 Costo Unit:</span>
-                                        <strong>€${p.precioUnidad.toFixed(2)}</strong>
+                                        <strong>$${p.precioUnidad.toFixed(2)}</strong>
                                     </div>
                                     <div class="product-detail">
                                         <span>💵 Venta:</span>
-                                        <strong>€${p.precioVenta.toFixed(2)}</strong>
+                                        <strong>$${p.precioVenta.toFixed(2)}</strong>
                                     </div>
                                     <div class="product-detail">
                                         <span>📊 Margen:</span>
@@ -2904,7 +2722,7 @@
                                     <div class="product-detail">
                                         <span>📈 Ben. Esp:</span>
                                         <strong class="${p.benEsperado >= 0 ? 'profit-positive' : 'profit-negative'}">
-                                            €${p.benEsperado.toFixed(2)}
+                                            $${p.benEsperado.toFixed(2)}
                                         </strong>
                                     </div>
                                 </div>
@@ -2927,7 +2745,7 @@
                                     </div>
                                     <div class="product-detail">
                                         <span>💸 Ben. Obtenido:</span>
-                                        <strong class="profit-positive">€${p.benObtenido.toFixed(2)}</strong>
+                                        <strong class="profit-positive">$${p.benObtenido.toFixed(2)}</strong>
                                     </div>
                                 </div>
 
@@ -2960,7 +2778,7 @@
                     return `
                         <div class="product-card">
                             <div class="product-image">
-                                ${p.photo ? `<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Crect width='400' height='400' fill='%23f0f0f0'/%3E%3C/svg%3E" data-src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo lazy-image" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
+                                ${p.photo ? `<img src="${p.photo}" alt="${p.producto}" data-photo-url="${p.photo}" class="clickable-photo" style="cursor: pointer;">` : '<span class="no-photo-icon">💎</span>'}
                             </div>
 
                             <div class="product-info">
@@ -2981,7 +2799,7 @@
                                     ` : ''}
                                     <div class="product-detail full-width" style="font-size: 1.3em; margin-top: 10px;">
                                         <span>💵 Precio:</span>
-                                        <strong style="color: var(--primary);">€${p.precioVenta.toFixed(2)}</strong>
+                                        <strong style="color: var(--primary);">$${p.precioVenta.toFixed(2)}</strong>
                                     </div>
                                 </div>
 
@@ -3000,9 +2818,6 @@
                     `;
                 }).join('');
             }
-            
-            // Initialize lazy loading for images
-            setTimeout(() => initLazyLoading(), 50);
         }
 
         // Update Stats
@@ -3020,8 +2835,8 @@
             
             if (isAdminMode) {
                 // ADMIN - Full statistics
-                const totalInvested = filtered.reduce((sum, p) => sum + (p.totalInvertido || 0), 0);
-                const totalValue = filtered.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.cantidad || 0)), 0);
+                const totalInvested = filtered.reduce((sum, p) => sum + ((p.precioUnidad || 0) * (p.disponibles || 0)), 0);
+                const totalValue = filtered.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.disponibles || 0)), 0);
                 const totalSold = filtered.reduce((sum, p) => sum + (p.vendidas || 0), 0);
                 const totalProfit = filtered.reduce((sum, p) => sum + (p.benObtenido || 0), 0);
                 const potentialProfit = filtered.reduce((sum, p) => sum + (p.benEsperado || 0), 0);
@@ -3040,12 +2855,12 @@
                     <div class="stat-card">
                         <div class="stat-icon">💰</div>
                         <div class="stat-label">Inversión Actual</div>
-                        <div class="stat-value">€${totalInvested.toFixed(2)}</div>
+                        <div class="stat-value">$${totalInvested.toFixed(2)}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">💎</div>
                         <div class="stat-label">Valor Inventario</div>
-                        <div class="stat-value">€${totalValue.toFixed(2)}</div>
+                        <div class="stat-value">$${totalValue.toFixed(2)}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">✅</div>
@@ -3055,12 +2870,12 @@
                     <div class="stat-card">
                         <div class="stat-icon">💸</div>
                         <div class="stat-label">Ganancia Obtenida</div>
-                        <div class="stat-value" style="color: var(--success);">€${totalProfit.toFixed(2)}</div>
+                        <div class="stat-value" style="color: var(--success);">$${totalProfit.toFixed(2)}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📈</div>
                         <div class="stat-label">Ganancia Potencial</div>
-                        <div class="stat-value">€${potentialProfit.toFixed(2)}</div>
+                        <div class="stat-value">$${potentialProfit.toFixed(2)}</div>
                     </div>
                 `;
             } else {
@@ -3125,7 +2940,7 @@
                     ${product.photo ? `<img src="${product.photo}" style="max-width: 150px; border-radius: 8px; margin-bottom: 15px;">` : ''}
                     <h3 style="color: var(--dark); margin-bottom: 10px;">${product.producto}</h3>
                     <p style="color: var(--gray);">Disponibles: <strong>${product.disponibles}</strong></p>
-                    <p style="color: var(--gray);">Precio: <strong>€${product.precioVenta.toFixed(2)}</strong></p>
+                    <p style="color: var(--gray);">Precio: <strong>$${product.precioVenta.toFixed(2)}</strong></p>
                 </div>
             `;
             
@@ -3195,11 +3010,35 @@
             try {
                 showSyncStatus('📦 Procesando entrega...', 'saving');
                 
-                // Call Apps Script to handle everything (mark as sold, delete reservation)
+                // Get reservation data BEFORE deleting
+                const reservation = reservations.find(r => r.comprador === comprador);
+                if (!reservation) {
+                    alert('Reserva no encontrada');
+                    return;
+                }
+                
+                // Update products: add to vendidas
+                for (let i = 0; i < reservation.productIds.length; i++) {
+                    const productId = reservation.productIds[i];
+                    const cantidad = reservation.cantidades[i];
+                    const product = products.find(p => p.id === productId);
+                    
+                    if (product) {
+                        product.vendidas = (product.vendidas || 0) + cantidad;
+                        product.benObtenido = product.precioVenta 
+                            ? (product.vendidas * (product.precioVenta - product.precioUnidad))
+                            : 0;
+                        
+                        // Save each product
+                        await saveSingleProduct(product);
+                    }
+                }
+                
+                // Delete reservation from Sheets
                 await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=deliverReservation&comprador=${encodeURIComponent(comprador)}`);
                 
                 // Reload data
-                await Promise.all([loadReservations(), loadData()]);
+                await loadReservations();
                 renderReservationsTab();
                 renderProducts();
                 updateStats();
@@ -3238,61 +3077,6 @@
             }
         }
         
-        // Remove individual product from reservation
-        async function removeProductFromReservation(comprador, productIndex) {
-            const reservation = reservations.find(r => r.comprador === comprador);
-            if (!reservation) return;
-            
-            const productName = reservation.productos[productIndex];
-            const quantity = reservation.cantidades[productIndex];
-            
-            if (!confirm(`¿Eliminar "${productName} × ${quantity}" de la reserva de ${comprador}?`)) return;
-            
-            try {
-                showSyncStatus('🔄 Eliminando producto...', 'saving');
-                
-                // Remove from arrays
-                const updatedProductos = [...reservation.productos];
-                const updatedCantidades = [...reservation.cantidades];
-                const updatedProductIds = [...reservation.productIds];
-                
-                updatedProductos.splice(productIndex, 1);
-                updatedCantidades.splice(productIndex, 1);
-                updatedProductIds.splice(productIndex, 1);
-                
-                // If no products left, cancel entire reservation
-                if (updatedProductos.length === 0) {
-                    await cancelReservation(comprador);
-                    return;
-                }
-                
-                // Update reservation in Sheets
-                const params = new URLSearchParams({
-                    action: 'updateReservation',
-                    comprador: comprador,
-                    productos: JSON.stringify(updatedProductos),
-                    cantidades: JSON.stringify(updatedCantidades),
-                    productIds: JSON.stringify(updatedProductIds)
-                });
-                
-                await jsonpRequest(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
-                
-                // Reload data
-                await Promise.all([loadReservations(), loadData()]);
-                renderProducts();
-                renderReservationsTab();
-                updateStats();
-                
-                showSyncStatus('✓ Producto eliminado', 'synced');
-                setTimeout(() => showSyncStatus('', 'synced'), 2000);
-            } catch (error) {
-                console.error('Error eliminando producto:', error);
-                showSyncStatus('⚠️ Error', 'error');
-                setTimeout(() => showSyncStatus('', 'synced'), 3000);
-                alert('Error al eliminar el producto. Por favor intenta de nuevo.');
-            }
-        }
-        
         function renderReservationsTab() {
             const grid = document.getElementById('reservationsGrid');
             
@@ -3309,26 +3093,11 @@
             
             grid.innerHTML = reservations.map(res => {
                 const totalProducts = res.productos.length;
-                
-                // Calculate total and build products list with prices
-                let reservationTotal = 0;
-                const productsList = res.productos.map((prodName, i) => {
-                    const productId = res.productIds[i];
-                    const product = products.find(p => p.id === productId);
-                    const quantity = res.cantidades[i];
-                    const price = product ? product.precioVenta : 0;
-                    const itemTotal = price * quantity;
-                    reservationTotal += itemTotal;
-                    
-                    return `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="flex: 1;">
-                            <strong>${prodName}</strong> × ${quantity} <span style="color: var(--gray);">(€${itemTotal.toFixed(2)})</span>
-                        </div>
-                        <button onclick="removeProductFromReservation('${res.comprador}', ${i})" 
-                                style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2em; padding: 4px 8px;"
-                                title="Eliminar este producto">✕</button>
-                    </div>`;
-                }).join('');
+                const productsList = res.productos.map((prod, i) => 
+                    `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0;">
+                        <strong>${prod}</strong> × ${res.cantidades[i]}
+                    </div>`
+                ).join('');
                 
                 return `
                     <div class="reservation-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -3344,16 +3113,12 @@
                             ${productsList}
                         </div>
                         
-                        <div style="text-align: right; padding: 10px 15px; background: var(--light-bg); border-radius: 8px; margin-bottom: 15px;">
-                            <strong style="font-size: 1.2em; color: var(--dark);">TOTAL: €${reservationTotal.toFixed(2)}</strong>
-                        </div>
-                        
                         <div style="display: flex; gap: 10px;">
                             <button class="btn btn-success" onclick="deliverReservation('${res.comprador}')" style="flex: 1;">
                                 ✓ Entregar Todo
                             </button>
                             <button class="btn btn-danger" onclick="cancelReservation('${res.comprador}')" style="flex: 1;">
-                                ✕ Cancelar Reserva
+                                ✕ Cancelar
                             </button>
                         </div>
                     </div>
@@ -3451,7 +3216,7 @@
             const gananciaGenerada = totalVendido - totalInvertidoVendido;
             const diezmo = gananciaGenerada * 0.10;
             const donacion = gananciaGenerada * 0.05;
-            const totalEnCaja = totalVendido - diezmo - donacion;
+            const totalEnCaja = gananciaGenerada * 0.85;
             
             grid.innerHTML = `
                 <div style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto;">
@@ -3464,15 +3229,15 @@
                             <div style="display: grid; gap: 20px; font-size: 1.2em;">
                                 <div style="display: flex; justify-content: space-between; padding-bottom: 15px;">
                                     <span>💵 Total Vendido:</span>
-                                    <strong style="font-size: 1.3em;">€${totalVendido.toFixed(2)}</strong>
+                                    <strong style="font-size: 1.3em;">$${totalVendido.toFixed(2)}</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; padding-bottom: 15px; border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px;">
                                     <span>💸 Total Invertido (vendido):</span>
-                                    <strong style="font-size: 1.3em; color: #fed7d7;">-€${totalInvertidoVendido.toFixed(2)}</strong>
+                                    <strong style="font-size: 1.3em; color: #fed7d7;">-$${totalInvertidoVendido.toFixed(2)}</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; padding: 20px 0; border-top: 3px solid white; border-bottom: 3px solid white;">
                                     <span style="font-size: 1.3em; font-weight: bold;">✨ Ganancia Generada:</span>
-                                    <strong style="font-size: 1.5em; color: #c6f6d5;">€${gananciaGenerada.toFixed(2)}</strong>
+                                    <strong style="font-size: 1.5em; color: #c6f6d5;">$${gananciaGenerada.toFixed(2)}</strong>
                                 </div>
                             </div>
                         </div>
@@ -3482,15 +3247,15 @@
                             <div style="display: grid; gap: 20px; font-size: 1.1em;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 10px; border-left: 5px solid var(--warning);">
                                     <span><strong>🙏 Diezmo (10%):</strong></span>
-                                    <span style="font-size: 1.3em; color: var(--warning); font-weight: bold;">-€${diezmo.toFixed(2)}</span>
+                                    <span style="font-size: 1.3em; color: var(--warning); font-weight: bold;">-$${diezmo.toFixed(2)}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 10px; border-left: 5px solid var(--secondary);">
                                     <span><strong>❤️ Donación (5%):</strong></span>
-                                    <span style="font-size: 1.3em; color: var(--secondary); font-weight: bold;">-€${donacion.toFixed(2)}</span>
+                                    <span style="font-size: 1.3em; color: var(--secondary); font-weight: bold;">-$${donacion.toFixed(2)}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-radius: 10px; margin-top: 10px;">
-                                    <span style="font-size: 1.3em;"><strong>💼 Total en Caja:</strong></span>
-                                    <span style="font-size: 1.8em; font-weight: bold;">€${totalEnCaja.toFixed(2)}</span>
+                                    <span style="font-size: 1.3em;"><strong>💼 Total en Caja (85%):</strong></span>
+                                    <span style="font-size: 1.8em; font-weight: bold;">$${totalEnCaja.toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
@@ -3567,11 +3332,11 @@
                             <div style="text-align: center;">
                                 <div style="margin-bottom: 20px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Ganancia Esperada Total</p>
-                                    <p style="font-size: 2em; font-weight: bold; color: var(--primary);">€${totalExpected.toFixed(2)}</p>
+                                    <p style="font-size: 2em; font-weight: bold; color: var(--primary);">$${totalExpected.toFixed(2)}</p>
                                 </div>
                                 <div style="margin-bottom: 20px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Ganancia Obtenida</p>
-                                    <p style="font-size: 2em; font-weight: bold; color: var(--success);">€${totalObtained.toFixed(2)}</p>
+                                    <p style="font-size: 2em; font-weight: bold; color: var(--success);">$${totalObtained.toFixed(2)}</p>
                                 </div>
                                 <div style="background: var(--light-bg); padding: 15px; border-radius: 10px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Progreso</p>
@@ -3588,11 +3353,11 @@
                             <div style="text-align: center;">
                                 <div style="margin-bottom: 20px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Inversión Total</p>
-                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--warning);">€${totalInversionGeneral.toFixed(2)}</p>
+                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--warning);">$${totalInversionGeneral.toFixed(2)}</p>
                                 </div>
                                 <div style="margin-bottom: 20px;">
                                     <p style="color: var(--gray); margin-bottom: 5px;">Dinero Total Vendido</p>
-                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--success);">€${dineroTotalVendido.toFixed(2)}</p>
+                                    <p style="font-size: 1.8em; font-weight: bold; color: var(--success);">$${dineroTotalVendido.toFixed(2)}</p>
                                 </div>
                                 <div style="background: ${alcanzado ? 'linear-gradient(135deg, var(--success) 0%, #38a169 100%)' : 'var(--light-bg)'}; padding: 20px; border-radius: 10px; color: ${alcanzado ? 'white' : 'inherit'};">
                                     <p style="margin-bottom: 10px; font-weight: bold;">${alcanzado ? '✅ PUNTO DE EQUILIBRIO ALCANZADO' : 'Progreso'}</p>
@@ -3908,89 +3673,7 @@
         }
 
         // Initialize on load
-        // Lazy loading images with Intersection Observer
-        function initLazyLoading() {
-            const imageObserver = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        const src = img.getAttribute('data-src');
-                        if (src) {
-                            img.src = src;
-                            img.classList.remove('lazy-image');
-                            observer.unobserve(img);
-                        }
-                    }
-                });
-            }, {
-                rootMargin: '50px' // Start loading 50px before image enters viewport
-            });
-            
-            document.querySelectorAll('.lazy-image').forEach(img => {
-                imageObserver.observe(img);
-            });
-        }
-        
-        // Start loading immediately when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            updateLoadingProgress(5, '🚀 Iniciando sistema...');
-        });
-        
         window.addEventListener('load', init);
     </script>
-
-    <!-- WhatsApp Floating Button -->
-    <a href="https://wa.me/34624875941?text=Hola%2C%20estoy%20interesad%40%20en%20algunos%20productos%20de%20la%20p%C3%A1gina%21%0AAqu%C3%AD%20te%20env%C3%ADo%20los%20pantallazos%20de%20lo%20que%20deseo" 
-       target="_blank" 
-       class="whatsapp-float"
-       title="Contactar por WhatsApp">
-        <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="30" cy="30" r="30" fill="#25D366"/>
-            <path d="M30.556 14C21.608 14 14.334 21.272 14.334 30.22c0 2.849.738 5.631 2.144 8.092l-2.282 8.355 8.556-2.245a16.157 16.157 0 007.804 1.988c8.948 0 16.222-7.272 16.222-16.22 0-8.948-7.274-16.19-16.222-16.19zm9.522 23.03c-.395 1.117-2.337 2.106-3.224 2.212-.888.106-1.712.422-5.766-1.203-4.054-1.625-6.613-5.697-6.814-5.961-.201-.264-1.644-2.186-1.644-4.171 0-1.985 1.04-2.964 1.408-3.366.368-.402.804-.503 1.073-.503.269 0 .537.005.772.014.248.01.58-.094.908.693.329.787 1.122 2.738 1.22 2.937.098.2.164.434.033.698-.131.264-.197.429-.395.66-.198.232-.417.518-.596.696-.198.198-.404.413-.174.81.231.397 1.027 1.693 2.204 2.742 1.514 1.348 2.788 1.766 3.184 1.964.395.198.627.165.858-.099.231-.264.988-1.151 1.252-1.548.264-.397.528-.331.89-.198.362.132 2.302 1.086 2.697 1.284.396.198.66.297.757.462.098.165.098.958-.297 2.075z" fill="white"/>
-        </svg>
-    </a>
-
-    <style>
-        .whatsapp-float {
-            position: fixed;
-            width: 60px;
-            height: 60px;
-            bottom: 30px;
-            right: 30px;
-            background-color: #25D366;
-            border-radius: 50%;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-
-        .whatsapp-float:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
-        }
-
-        .whatsapp-float:active {
-            transform: scale(0.95);
-        }
-
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-            .whatsapp-float {
-                width: 50px;
-                height: 50px;
-                bottom: 20px;
-                right: 20px;
-            }
-            
-            .whatsapp-float svg {
-                width: 50px;
-                height: 50px;
-            }
-        }
-    </style>
 </body>
 </html>
