@@ -1150,6 +1150,7 @@
         // Global State
         let products = [];
         let reservations = []; // Nueva: lista de reservas pendientes
+        let seasonInvestment = 0; // Inversión manual de la temporada
         let currentTab = 'inventory';
         let currentEditId = null;
         let currentSellId = null;
@@ -1158,7 +1159,7 @@
         let currentDeliveryClient = null;
         let syncStatus = 'loading';
         let isAdminMode = false;
-        let ADMIN_PASSWORD = localStorage.getItem('tienda_bendita_admin_password') || 'TiendadeDios320'; // Password can be changed
+        let ADMIN_PASSWORD = localStorage.getItem('tienda_bendita_admin_password') || 'tiendabendita2026'; // Password can be changed
         let currentEditCategory = null; // For editing categories
         
         // Photo Viewer Functions
@@ -1253,7 +1254,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydJlj8mbYq2Gzva1TQOnCXxUs3AcpVINMtlM9FeLLzMtmjNyBlH-B9RO1AoUw9YaMFNg/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjbj4BIq_U4v7VKAT4TJhzHrZ6k1n114vbAfrRKkVHuTtZ9n-BWpGeyNjgnfCGWYP7uQ/exec';
 
         // Initialize
         async function init() {
@@ -1650,6 +1651,22 @@
                         }
                     } catch (catError) {
                         console.warn('⚠️ No se pudieron cargar categorías:', catError.message);
+                    }
+                    
+                    // Load season investment
+                    try {
+                        const metadataData = await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=getMetadata`);
+                        if (metadataData.seasonInvestment !== undefined) {
+                            seasonInvestment = parseFloat(metadataData.seasonInvestment) || 0;
+                            localStorage.setItem('tienda_bendita_season_investment', seasonInvestment);
+                            console.log(`✅ Cargada inversión de temporada: €${seasonInvestment}`);
+                        }
+                    } catch (invError) {
+                        console.warn('⚠️ No se pudo cargar inversión de temporada:', invError.message);
+                        const localInv = localStorage.getItem('tienda_bendita_season_investment');
+                        if (localInv) {
+                            seasonInvestment = parseFloat(localInv) || 0;
+                        }
                     }
                     
                     showSyncStatus('', 'synced');
@@ -2839,11 +2856,20 @@
             
             if (isAdminMode) {
                 // ADMIN - Full statistics
-                const totalInvested = filtered.reduce((sum, p) => sum + (p.totalInvertido || 0), 0);
                 const totalValue = filtered.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.cantidad || 0)), 0);
                 const totalSold = filtered.reduce((sum, p) => sum + (p.vendidas || 0), 0);
-                const totalProfit = filtered.reduce((sum, p) => sum + (p.benObtenido || 0), 0);
-                const potentialProfit = filtered.reduce((sum, p) => sum + (p.benEsperado || 0), 0);
+                
+                // Calcular dinero total vendido
+                const totalVendido = filtered.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.vendidas || 0)), 0);
+                
+                // Calcular ganancia obtenida = totalVendido - seasonInvestment
+                const gananciaObtenida = totalVendido - seasonInvestment;
+                const gananciaObtenidaDisplay = gananciaObtenida < 0 
+                    ? 'Ya casi comenzamos a sumar 😊' 
+                    : `€${gananciaObtenida.toFixed(2)}`;
+                
+                // Ganancia potencial = Valor total inventario - inversión manual
+                const potentialProfit = totalValue - seasonInvestment;
 
                 stats.innerHTML = `
                     <div class="stat-card">
@@ -2859,7 +2885,7 @@
                     <div class="stat-card">
                         <div class="stat-icon">💰</div>
                         <div class="stat-label">Inversión Actual</div>
-                        <div class="stat-value">€${totalInvested.toFixed(2)}</div>
+                        <div class="stat-value">€${seasonInvestment.toFixed(2)}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">💎</div>
@@ -2868,13 +2894,13 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">✅</div>
-                        <div class="stat-label">Unidades Vendidas</div>
+                        <div class="stat-label">Unidades Vendidas esta Temporada</div>
                         <div class="stat-value">${totalSold}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">💸</div>
                         <div class="stat-label">Ganancia Obtenida</div>
-                        <div class="stat-value" style="color: var(--success);">€${totalProfit.toFixed(2)}</div>
+                        <div class="stat-value" style="color: ${gananciaObtenida < 0 ? 'var(--warning)' : 'var(--success)'}; ${gananciaObtenida < 0 ? 'font-size: 0.9em;' : ''}">${gananciaObtenidaDisplay}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📈</div>
@@ -3252,6 +3278,30 @@
         }
 
         // Render Finances Tab
+        // Update Season Investment
+        async function updateSeasonInvestment(value) {
+            try {
+                const amount = parseFloat(value) || 0;
+                seasonInvestment = amount;
+                
+                // Save to localStorage
+                localStorage.setItem('tienda_bendita_season_investment', seasonInvestment);
+                
+                // Save to Google Sheets
+                showSyncStatus('Guardando inversión...', 'saving');
+                await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=saveSeasonInvestment&amount=${encodeURIComponent(amount)}`);
+                showSyncStatus('✅ Guardado', 'synced');
+                
+                // Update displays
+                updateStats();
+                renderFinances();
+                
+            } catch (error) {
+                console.error('Error saving season investment:', error);
+                showSyncStatus('❌ Error al guardar', 'error');
+            }
+        }
+
         function renderFinances() {
             const grid = document.getElementById('productsGrid');
             
@@ -3259,15 +3309,13 @@
             const soldProducts = products.filter(p => (p.vendidas || 0) > 0);
             
             let totalVendido = 0;
-            let totalInvertidoVendido = 0;
             
             soldProducts.forEach(p => {
                 const unidadesVendidas = p.vendidas || 0;
                 totalVendido += unidadesVendidas * p.precioVenta;
-                totalInvertidoVendido += unidadesVendidas * p.precioUnidad;
             });
             
-            const gananciaGenerada = totalVendido - totalInvertidoVendido;
+            const gananciaGenerada = totalVendido - seasonInvestment;
             const diezmo = gananciaGenerada * 0.10;
             const donacion = gananciaGenerada * 0.05;
             const totalEnCaja = totalVendido - diezmo - donacion;
@@ -3279,6 +3327,21 @@
                             💰 FINANZAS
                         </h2>
                         
+                        <!-- Campo editable para inversión de temporada -->
+                        <div style="background: var(--light-bg); padding: 25px; border-radius: 15px; margin-bottom: 30px;">
+                            <h3 style="color: var(--dark); margin-bottom: 15px; font-size: 1.3em;">⚙️ Configuración de Temporada</h3>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <label style="flex: 1; font-weight: bold; color: var(--dark);">💰 Dinero Invertido esta Temporada:</label>
+                                <input type="number" id="seasonInvestmentInput" 
+                                    value="${seasonInvestment}" 
+                                    step="0.01" 
+                                    min="0"
+                                    style="padding: 12px; border: 2px solid var(--primary); border-radius: 8px; font-size: 1.1em; width: 150px; text-align: right;"
+                                    onchange="updateSeasonInvestment(this.value)">
+                                <span style="font-size: 1.1em; color: var(--gray);">€</span>
+                            </div>
+                        </div>
+                        
                         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; margin-bottom: 30px;">
                             <div style="display: grid; gap: 20px; font-size: 1.2em;">
                                 <div style="display: flex; justify-content: space-between; padding-bottom: 15px;">
@@ -3286,8 +3349,8 @@
                                     <strong style="font-size: 1.3em;">€${totalVendido.toFixed(2)}</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; padding-bottom: 15px; border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px;">
-                                    <span>💸 Total Invertido (vendido):</span>
-                                    <strong style="font-size: 1.3em; color: #fed7d7;">-€${totalInvertidoVendido.toFixed(2)}</strong>
+                                    <span>💸 Total Invertido (temporada):</span>
+                                    <strong style="font-size: 1.3em; color: #fed7d7;">-€${seasonInvestment.toFixed(2)}</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; padding: 20px 0; border-top: 3px solid white; border-bottom: 3px solid white;">
                                     <span style="font-size: 1.3em; font-weight: bold;">✨ Ganancia Generada:</span>
@@ -3343,15 +3406,15 @@
                 .slice(0, 10);
             
             // Break-even point
-            const totalInversionGeneral = products.reduce((sum, p) => sum + (p.totalInvertido || 0), 0);
             const dineroTotalVendido = products.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.vendidas || 0)), 0);
-            const breakEvenPercentage = totalInversionGeneral > 0 ? ((dineroTotalVendido / totalInversionGeneral) * 100) : 0;
+            const breakEvenPercentage = seasonInvestment > 0 ? ((dineroTotalVendido / seasonInvestment) * 100) : 0;
             const faltaPorcentaje = Math.max(0, 100 - breakEvenPercentage);
             const alcanzado = breakEvenPercentage >= 100;
             
-            // Expected vs obtained profit
-            const totalExpected = products.reduce((sum, p) => sum + (p.benEsperado || 0), 0);
-            const totalObtained = products.reduce((sum, p) => sum + (p.benObtenido || 0), 0);
+            // Expected profit: valor total inventario - inversión manual
+            const valorTotalInventario = products.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.cantidad || 0)), 0);
+            const totalExpected = valorTotalInventario - seasonInvestment;
+            const totalObtained = dineroTotalVendido - seasonInvestment;
             const percentage = totalExpected > 0 ? ((totalObtained / totalExpected) * 100).toFixed(1) : 0;
             
             grid.innerHTML = `
