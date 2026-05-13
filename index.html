@@ -3009,7 +3009,8 @@
                     `&comprador=${encodeURIComponent(comprador)}` +
                     `&producto=${encodeURIComponent(product.producto)}` +
                     `&cantidad=${cantidad}` +
-                    `&productId=${product.id}`;
+                    `&productId=${product.id}` +
+                    `&precio=${product.precioVenta}`;
                 
                 await jsonpRequest(url);
                 
