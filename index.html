@@ -2333,7 +2333,9 @@
                 precioVenta: parseFloat(document.getElementById('precioVenta').value),
                 benEsperado: parseFloat(document.getElementById('benEsperado').value),
                 vendidas: parseFloat(document.getElementById('vendidas').value),
-                disponibles: parseFloat(document.getElementById('disponibles').value),
+                // CRÍTICO: Recalcular disponibles en base a cantidad y vendidas
+                // NO tomar directamente del formulario para evitar inconsistencias
+                disponibles: parseFloat(document.getElementById('cantidad').value) - parseFloat(document.getElementById('vendidas').value),
                 benObtenido: parseFloat(document.getElementById('benObtenido').value),
                 margen: parseFloat(document.getElementById('margen').value),
                 photo: convertDriveUrl(document.getElementById('photoDriveUrl').value) || (photoPreview.style.display !== 'none' ? photoPreview.src : null)
@@ -2445,7 +2447,13 @@
                         
                         const product = products.find(p => p.id === id);
                         if (product) {
+                            // SOLO modificar la foto, nada más
                             product.photo = compressedBase64;
+                            
+                            // IMPORTANTE: Recalcular disponibles antes de guardar
+                            // para evitar que se pierda el tracking de reservas
+                            product.disponibles = product.cantidad - product.vendidas;
+                            
                             localStorage.setItem('tienda_bendita_inventory', JSON.stringify(products));
                             await saveSingleProduct(product);
                             renderProducts();
@@ -2832,7 +2840,7 @@
                                 ` : ''}
 
                                 <div class="stock-indicator ${isAvailable ? 'stock-ok' : 'stock-out'}" style="margin-top: 15px;">
-                                    ${isAvailable ? `✅ Disponible (${p.disponibles} unidades)` : '🔴 AGOTADO'}
+                                    ${isAvailable ? '✅ Disponible' : '🔴 AGOTADO'}
                                 </div>
                             </div>
                         </div>
@@ -2862,11 +2870,19 @@
                 // Calcular dinero total vendido
                 const totalVendido = filtered.reduce((sum, p) => sum + ((p.precioVenta || 0) * (p.vendidas || 0)), 0);
                 
-                // Calcular ganancia obtenida = totalVendido - seasonInvestment
-                const gananciaObtenida = totalVendido - seasonInvestment;
-                const gananciaObtenidaDisplay = gananciaObtenida < 0 
-                    ? 'Ya casi comenzamos a sumar 😊' 
-                    : `€${gananciaObtenida.toFixed(2)}`;
+                // Calcular ganancia obtenida - Solo si se alcanzó el punto de equilibrio
+                let gananciaObtenida = 0;
+                let gananciaObtenidaDisplay = '';
+                
+                if (totalVendido >= seasonInvestment) {
+                    // Ya se alcanzó el punto de equilibrio
+                    gananciaObtenida = totalVendido - seasonInvestment;
+                    gananciaObtenidaDisplay = `€${gananciaObtenida.toFixed(2)}`;
+                } else {
+                    // Aún no se alcanza el punto de equilibrio
+                    gananciaObtenida = 0;
+                    gananciaObtenidaDisplay = 'Ya casi comenzamos a sumar 😊';
+                }
                 
                 // Ganancia potencial = Valor total inventario - inversión manual
                 const potentialProfit = totalValue - seasonInvestment;
@@ -2900,7 +2916,7 @@
                     <div class="stat-card">
                         <div class="stat-icon">💸</div>
                         <div class="stat-label">Ganancia Obtenida</div>
-                        <div class="stat-value" style="color: ${gananciaObtenida < 0 ? 'var(--warning)' : 'var(--success)'}; ${gananciaObtenida < 0 ? 'font-size: 0.9em;' : ''}">${gananciaObtenidaDisplay}</div>
+                        <div class="stat-value" style="color: ${gananciaObtenida === 0 ? 'var(--warning)' : 'var(--success)'}; ${gananciaObtenida === 0 ? 'font-size: 0.9em;' : ''}">${gananciaObtenidaDisplay}</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📈</div>
@@ -3316,9 +3332,19 @@
                 totalVendido += unidadesVendidas * p.precioVenta;
             });
             
-            const gananciaGenerada = totalVendido - seasonInvestment;
-            const diezmo = gananciaGenerada * 0.10;
-            const donacion = gananciaGenerada * 0.05;
+            // Calcular ganancia generada - Solo si se alcanzó el punto de equilibrio
+            let gananciaGenerada = 0;
+            let diezmo = 0;
+            let donacion = 0;
+            
+            if (totalVendido >= seasonInvestment) {
+                // Ya se alcanzó el punto de equilibrio
+                gananciaGenerada = totalVendido - seasonInvestment;
+                diezmo = gananciaGenerada * 0.10;
+                donacion = gananciaGenerada * 0.05;
+            }
+            // Si no se alcanzó, todo permanece en 0
+            
             const totalEnCaja = totalVendido - diezmo - donacion;
             
             grid.innerHTML = `
