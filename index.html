@@ -3169,10 +3169,12 @@
                 return;
             }
             
-            // Calcular total general de todas las reservas
+           // Calcular total general de todas las reservas
             let grandTotal = 0;
             reservations.forEach(res => {
                 res.productos.forEach((prodName, i) => {
+                    const productId = res.productIds[i];
+                    const product = products.find(p => p.id === productId);
                     const quantity = res.cantidades[i];
                     const price = product ? product.precioVenta : 0;
                     grandTotal += price * quantity;
