@@ -3174,7 +3174,7 @@
             reservations.forEach(res => {
                 res.productos.forEach((prodName, i) => {
                     const quantity = res.cantidades[i];
-                    const price = res.precios[i] || 0;
+                    const price = product ? product.precioVenta : 0;
                     grandTotal += price * quantity;
                 });
             });
