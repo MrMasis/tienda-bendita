@@ -1254,7 +1254,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5bjDTIg_3dfVopdfET6BkmNvFxSQY-deMfUtC1MqlheyH6dMOoSZrwGt13VR5nxUSPQ/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNEPnSimmMgFhKDtkZu28pc62mwM39GLcsBNR-auPnNxvAoPyowjeU_MHV0G4X1sGyjg/exec';
 
         // Initialize
         async function init() {
@@ -3169,58 +3169,80 @@
                 return;
             }
             
-            grid.innerHTML = reservations.map(res => {
-                const totalProducts = res.productos.length;
-                
-                // Calculate total and build products list with prices
-                let reservationTotal = 0;
-                const productsList = res.productos.map((prodName, i) => {
-                    const productId = res.productIds[i];
-                    const product = products.find(p => p.id === productId);
+            // Calcular total general de todas las reservas
+            let grandTotal = 0;
+            reservations.forEach(res => {
+                res.productos.forEach((prodName, i) => {
                     const quantity = res.cantidades[i];
-                    const price = product ? product.precioVenta : 0;
-                    const itemTotal = price * quantity;
-                    reservationTotal += itemTotal;
-                    
-                    return `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="flex: 1;">
-                            <strong>${prodName}</strong> × ${quantity} <span style="color: var(--gray);">(€${itemTotal.toFixed(2)})</span>
-                        </div>
-                        <button onclick="removeProductFromReservation('${res.comprador}', ${i})" 
-                                style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2em; padding: 4px 8px;"
-                                title="Eliminar este producto">✕</button>
-                    </div>`;
-                }).join('');
-                
-                return `
-                    <div class="reservation-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-                            <div>
-                                <h3 style="margin: 0 0 5px 0; color: var(--dark);">${res.comprador}</h3>
-                                <p style="margin: 0; color: var(--gray); font-size: 0.9em;">${totalProducts} producto${totalProducts > 1 ? 's' : ''} reservado${totalProducts > 1 ? 's' : ''}</p>
-                            </div>
-                            <span style="background: var(--accent); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em;">Pendiente</span>
-                        </div>
-                        
-                        <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                            ${productsList}
-                        </div>
-                        
-                        <div style="text-align: right; padding: 10px 15px; background: var(--light-bg); border-radius: 8px; margin-bottom: 15px;">
-                            <strong style="font-size: 1.2em; color: var(--dark);">TOTAL: €${reservationTotal.toFixed(2)}</strong>
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-success" onclick="deliverReservation('${res.comprador}')" style="flex: 1;">
-                                ✓ Entregar Todo
-                            </button>
-                            <button class="btn btn-danger" onclick="cancelReservation('${res.comprador}')" style="flex: 1;">
-                                ✕ Cancelar Reserva
-                            </button>
+                    const price = res.precios[i] || 0;
+                    grandTotal += price * quantity;
+                });
+            });
+            
+            grid.innerHTML = `
+                <div style="grid-column: 1 / -1; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                        <div style="text-align: center;">
+                            <p style="margin: 0 0 10px 0; font-size: 0.95em; opacity: 0.9;">💰 Dinero Pendiente por Recoger</p>
+                            <p style="margin: 0; font-size: 2.5em; font-weight: bold;">€${grandTotal.toFixed(2)}</p>
+                            <p style="margin: 10px 0 0 0; font-size: 0.9em; opacity: 0.9;">${reservations.length} reserva${reservations.length > 1 ? 's' : ''} pendiente${reservations.length > 1 ? 's' : ''}</p>
                         </div>
                     </div>
-                `;
-            }).join('');
+                </div>
+                
+                ${reservations.map(res => {
+                    const totalProducts = res.productos.length;
+                    
+                    // Calculate total and build products list with prices
+                    let reservationTotal = 0;
+                    const productsList = res.productos.map((prodName, i) => {
+                        const productId = res.productIds[i];
+                        const product = products.find(p => p.id === productId);
+                        const quantity = res.cantidades[i];
+                        const price = product ? product.precioVenta : 0;
+                        const itemTotal = price * quantity;
+                        reservationTotal += itemTotal;
+                        
+                        return `<div style="padding: 8px 0; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <strong>${prodName}</strong> × ${quantity} <span style="color: var(--gray);">(€${itemTotal.toFixed(2)})</span>
+                            </div>
+                            <button onclick="removeProductFromReservation('${res.comprador}', ${i})" 
+                                    style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2em; padding: 4px 8px;"
+                                    title="Eliminar este producto">✕</button>
+                        </div>`;
+                    }).join('');
+                    
+                    return `
+                        <div class="reservation-card" style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                <div>
+                                    <h3 style="margin: 0 0 5px 0; color: var(--dark);">${res.comprador}</h3>
+                                    <p style="margin: 0; color: var(--gray); font-size: 0.9em;">${totalProducts} producto${totalProducts > 1 ? 's' : ''} reservado${totalProducts > 1 ? 's' : ''}</p>
+                                </div>
+                                <span style="background: var(--accent); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85em;">Pendiente</span>
+                            </div>
+                            
+                            <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                ${productsList}
+                            </div>
+                            
+                            <div style="text-align: right; padding: 10px 15px; background: var(--light-bg); border-radius: 8px; margin-bottom: 15px;">
+                                <strong style="font-size: 1.2em; color: var(--dark);">TOTAL: €${reservationTotal.toFixed(2)}</strong>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-success" onclick="deliverReservation('${res.comprador}')" style="flex: 1;">
+                                    ✓ Entregar Todo
+                                </button>
+                                <button class="btn btn-danger" onclick="cancelReservation('${res.comprador}')" style="flex: 1;">
+                                    ✕ Cancelar Reserva
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            `;
         }
 
         // Category Management Functions
@@ -3735,7 +3757,8 @@
                         if (product.cantidad > 0 && product.totalInvertido > 0) {
                             product.precioUnidad = product.totalInvertido / product.cantidad;
                             product.benEsperado = (product.precioVenta - product.precioUnidad) * product.cantidad;
-                            product.disponibles = product.cantidad - product.vendidas;
+                            // NO recalcular disponibles - usar el valor exacto del Excel
+                            // product.disponibles = product.cantidad - product.vendidas;
                             product.benObtenido = product.cantidad > 0 ? product.vendidas * product.benEsperado / product.cantidad : 0;
                             product.margen = product.precioUnidad > 0 ? ((product.precioVenta - product.precioUnidad) / product.precioUnidad) * 100 : 0;
                         }
@@ -3768,10 +3791,26 @@
         }
 
         // Convert Excel date to JS date
+        // Convertir fecha Excel a formato YYYY-MM-DD consistente
         function excelDateToJSDate(excelDate) {
-            if (typeof excelDate === 'string') return excelDate;
+            // Si ya es string en formato YYYY-MM-DD, devolverla tal cual
+            if (typeof excelDate === 'string') {
+                if (/^\d{4}-\d{2}-\d{2}$/.test(excelDate)) {
+                    return excelDate;
+                }
+                // Si es formato ISO con hora, extraer solo la fecha
+                if (excelDate.includes('T')) {
+                    return excelDate.split('T')[0];
+                }
+                return excelDate;
+            }
+            
+            // Convertir número Excel a fecha
             const date = new Date((excelDate - 25569) * 86400 * 1000);
-            return date.toISOString().split('T')[0];
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         // Export to Excel
