@@ -1151,6 +1151,7 @@
         let products = [];
         let reservations = []; // Nueva: lista de reservas pendientes
         let seasonInvestment = 0; // Inversión manual de la temporada
+        let saldoAnterior = 0; // Dinero que quedó de meses anteriores
         let currentTab = 'inventory';
         let currentEditId = null;
         let currentSellId = null;
@@ -1254,7 +1255,7 @@
         let categoriesStructure = {};
 
         // Google Sheets API Configuration
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzkjRw48GBSGCWw5ZJGWdTWjRJOuR6F08YWx_3Ncp5eu4oGIE1SLejIR3WSgqAFDGjaGQ/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzApBABdsvMC9w_KGPuBCFBBF5hWZiLq2TbocVFQFOojrSoKfnRBDvI9bkBjXAxQsfeg/exec';
 
         // Initialize
         async function init() {
@@ -1660,6 +1661,11 @@
                             seasonInvestment = parseFloat(metadataData.seasonInvestment) || 0;
                             localStorage.setItem('tienda_bendita_season_investment', seasonInvestment);
                             console.log(`✅ Cargada inversión de temporada: €${seasonInvestment}`);
+                        }
+                        if (metadataData.saldoAnterior !== undefined) {
+                            saldoAnterior = parseFloat(metadataData.saldoAnterior) || 0;
+                            localStorage.setItem('tienda_bendita_saldo_anterior', saldoAnterior);
+                            console.log(`✅ Cargado saldo anterior: €${saldoAnterior}`);
                         }
                     } catch (invError) {
                         console.warn('⚠️ No se pudo cargar inversión de temporada:', invError.message);
@@ -3343,6 +3349,28 @@
             }
         }
 
+        async function updateSaldoAnterior(value) {
+            try {
+                const amount = parseFloat(value) || 0;
+                saldoAnterior = amount;
+                
+                // Save to localStorage
+                localStorage.setItem('tienda_bendita_saldo_anterior', saldoAnterior);
+                
+                // Save to Google Sheets
+                showSyncStatus('Guardando saldo anterior...', 'saving');
+                await jsonpRequest(`${GOOGLE_SCRIPT_URL}?action=saveSaldoAnterior&amount=${encodeURIComponent(amount)}`);
+                showSyncStatus('✅ Guardado', 'synced');
+                
+                // Update displays
+                renderFinances();
+                
+            } catch (error) {
+                console.error('Error updating saldo anterior:', error);
+                showSyncStatus('⚠️ Error al guardar', 'error');
+            }
+        }
+
         function renderFinances() {
             const grid = document.getElementById('productsGrid');
             
@@ -3369,7 +3397,7 @@
             }
             // Si no se alcanzó, todo permanece en 0
             
-            const totalEnCaja = totalVendido - diezmo - donacion;
+            const totalEnCaja = totalVendido - diezmo - donacion + saldoAnterior;
             
             grid.innerHTML = `
                 <div style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto;">
@@ -3381,7 +3409,7 @@
                         <!-- Campo editable para inversión de temporada -->
                         <div style="background: var(--light-bg); padding: 25px; border-radius: 15px; margin-bottom: 30px;">
                             <h3 style="color: var(--dark); margin-bottom: 15px; font-size: 1.3em;">⚙️ Configuración de Temporada</h3>
-                            <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
                                 <label style="flex: 1; font-weight: bold; color: var(--dark);">💰 Dinero Invertido esta Temporada:</label>
                                 <input type="number" id="seasonInvestmentInput" 
                                     value="${seasonInvestment}" 
@@ -3389,6 +3417,16 @@
                                     min="0"
                                     style="padding: 12px; border: 2px solid var(--primary); border-radius: 8px; font-size: 1.1em; width: 150px; text-align: right;"
                                     onchange="updateSeasonInvestment(this.value)">
+                                <span style="font-size: 1.1em; color: var(--gray);">€</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <label style="flex: 1; font-weight: bold; color: var(--dark);">📊 Saldo Anterior de Caja:</label>
+                                <input type="number" id="saldoAnteriorInput" 
+                                    value="${saldoAnterior}" 
+                                    step="0.01" 
+                                    min="0"
+                                    style="padding: 12px; border: 2px solid var(--secondary); border-radius: 8px; font-size: 1.1em; width: 150px; text-align: right;"
+                                    onchange="updateSaldoAnterior(this.value)">
                                 <span style="font-size: 1.1em; color: var(--gray);">€</span>
                             </div>
                         </div>
