@@ -3182,7 +3182,7 @@
                     const productId = res.productIds[i];
                     const product = products.find(p => p.id === productId);
                     const quantity = res.cantidades[i];
-                    const price = product ? product.precioVenta : 0;
+                    const price = res.precios && res.precios[i] ? res.precios[i] : 0;
                     grandTotal += price * quantity;
                 });
             });
@@ -3207,7 +3207,7 @@
                         const productId = res.productIds[i];
                         const product = products.find(p => p.id === productId);
                         const quantity = res.cantidades[i];
-                        const price = product ? product.precioVenta : 0;
+                        const price = res.precios && res.precios[i] ? res.precios[i] : 0;
                         const itemTotal = price * quantity;
                         reservationTotal += itemTotal;
                         
