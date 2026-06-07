@@ -3435,19 +3435,19 @@
                             </div>
                         </div>
                         
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; margin-bottom: 30px;">
-                            <div style="display: grid; gap: 20px; font-size: 1.2em;">
-                                <div style="display: flex; justify-content: space-between; padding-bottom: 15px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 30px;">
+                            <div style="display: grid; gap: 15px; font-size: 0.95em;">
+                                <div style="display: flex; justify-content: space-between; padding-bottom: 10px;">
                                     <span>💵 Total Vendido:</span>
-                                    <strong style="font-size: 1.3em;">€${totalVendido.toFixed(2)}</strong>
+                                    <strong>€${totalVendido.toFixed(2)}</strong>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; padding-bottom: 15px; border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px;">
+                                <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 10px;">
                                     <span>💸 Total Invertido (temporada):</span>
-                                    <strong style="font-size: 1.3em; color: #fed7d7;">-€${seasonInvestment.toFixed(2)}</strong>
+                                    <strong style="color: #fed7d7;">-€${seasonInvestment.toFixed(2)}</strong>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; padding: 20px 0; border-top: 3px solid white; border-bottom: 3px solid white;">
-                                    <span style="font-size: 1.3em; font-weight: bold;">✨ Ganancia Generada:</span>
-                                    <strong style="font-size: 1.5em; color: #c6f6d5;">€${gananciaGenerada.toFixed(2)}</strong>
+                                <div style="display: flex; justify-content: space-between; padding: 15px 0; border-top: 2px solid white; border-bottom: 2px solid white;">
+                                    <span style="font-weight: bold;">✨ Ganancia Generada:</span>
+                                    <strong style="color: #c6f6d5;">€${gananciaGenerada.toFixed(2)}</strong>
                                 </div>
                             </div>
                         </div>
@@ -3455,17 +3455,28 @@
                         <div style="background: var(--light-bg); padding: 30px; border-radius: 15px;">
                             <h3 style="color: var(--dark); margin-bottom: 25px; font-size: 1.5em;">📊 Distribución:</h3>
                             <div style="display: grid; gap: 20px; font-size: 1.1em;">
+                                <!-- Total en Caja - Primero -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 10px; margin-bottom: 15px;">
+                                    <span style="font-size: 1.2em;"><strong>💰 Total en Caja:</strong></span>
+                                    <span style="font-size: 1.8em; font-weight: bold;">€${totalEnCaja.toFixed(2)}</span>
+                                </div>
+                                
+                                <!-- Diezmo -->
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 10px; border-left: 5px solid var(--warning);">
-                                    <span><strong>🙏 Diezmo (10%):</strong></span>
+                                    <span><strong>🙏 Diezmo (10% de ganancia):</strong></span>
                                     <span style="font-size: 1.3em; color: var(--warning); font-weight: bold;">-€${diezmo.toFixed(2)}</span>
                                 </div>
+                                
+                                <!-- Donación -->
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 10px; border-left: 5px solid var(--secondary);">
-                                    <span><strong>❤️ Donación (5%):</strong></span>
+                                    <span><strong>❤️ Donación (5% de ganancia):</strong></span>
                                     <span style="font-size: 1.3em; color: var(--secondary); font-weight: bold;">-€${donacion.toFixed(2)}</span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border-radius: 10px; margin-top: 10px;">
-                                    <span style="font-size: 1.3em;"><strong>💼 Total en Caja:</strong></span>
-                                    <span style="font-size: 1.8em; font-weight: bold;">€${totalEnCaja.toFixed(2)}</span>
+                                
+                                <!-- Disponible del Negocio -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 25px; background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; border-radius: 10px; margin-top: 10px; border: 3px solid #22543d;">
+                                    <span style="font-size: 1.2em;"><strong>🏢 Disponible del Negocio:</strong></span>
+                                    <span style="font-size: 1.8em; font-weight: bold;">€${(totalEnCaja - diezmo - donacion).toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>
